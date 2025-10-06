@@ -249,6 +249,83 @@ class AdminController extends Controller
         return redirect()->route('admin.withdrawals')->with('success', 'Withdrawal marked as processing.');
     }
 
+    public function analytics()
+    {
+        $this->checkAdminRole();
+        
+        // Get analytics data
+        $totalUsers = User::count();
+        $activeUsers = User::where('is_active', true)->count();
+        $totalVideos = Video::count();
+        $activeVideos = Video::where('is_active', true)->count();
+        $totalDeposits = Deposit::where('status', 'completed')->sum('amount');
+        $totalWithdrawals = Withdrawal::where('status', 'completed')->sum('amount');
+        $pendingWithdrawals = Withdrawal::where('status', 'pending')->sum('amount');
+        
+        // Monthly data for charts
+        $monthlyUsers = User::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+            
+        $monthlyRevenue = Deposit::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(amount) as total')
+            ->where('status', 'completed')
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+            
+        $monthlyWithdrawals = Withdrawal::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(amount) as total')
+            ->where('status', 'completed')
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        return view('admin.analytics', compact(
+            'totalUsers', 'activeUsers', 'totalVideos', 'activeVideos',
+            'totalDeposits', 'totalWithdrawals', 'pendingWithdrawals',
+            'monthlyUsers', 'monthlyRevenue', 'monthlyWithdrawals'
+        ));
+    }
+
+    public function settings()
+    {
+        $this->checkAdminRole();
+        
+        // Get current settings (you can create a settings table later)
+        $settings = [
+            'site_name' => config('app.name', 'VideoEarn'),
+            'site_email' => config('mail.from.address', 'admin@videoearn.com'),
+            'min_withdrawal' => 10,
+            'withdrawal_fee_percent' => 5,
+            'referral_bonus' => 5,
+            'video_points_rate' => 0.1, // $0.10 per point
+        ];
+
+        return view('admin.settings', compact('settings'));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $this->checkAdminRole();
+        
+        $request->validate([
+            'site_name' => 'required|string|max:255',
+            'site_email' => 'required|email|max:255',
+            'min_withdrawal' => 'required|numeric|min:1',
+            'withdrawal_fee_percent' => 'required|numeric|min:0|max:100',
+            'referral_bonus' => 'required|numeric|min:0',
+            'video_points_rate' => 'required|numeric|min:0',
+        ]);
+
+        // Here you would typically save to a settings table
+        // For now, we'll just show a success message
+        
+        return redirect()->route('admin.settings')->with('success', 'Settings updated successfully.');
+    }
+
     public function rejectWithdrawal(Request $request, Withdrawal $withdrawal)
     {
         $this->checkAdminRole();

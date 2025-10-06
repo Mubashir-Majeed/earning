@@ -94,14 +94,14 @@
                     Withdrawals
                 </a>
                 
-                <a href="#" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                <a href="{{ route('admin.analytics') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.analytics') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
                     <i class="fas fa-chart-bar mr-3"></i>
                     Analytics
                 </a>
                 
-                <a href="#" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                <a href="{{ route('admin.settings') }}" 
+                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.settings') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
                     <i class="fas fa-cog mr-3"></i>
                     Settings
                 </a>
