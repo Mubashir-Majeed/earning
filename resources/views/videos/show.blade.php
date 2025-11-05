@@ -316,11 +316,13 @@
             const percentage = (currentWatchTime / videoDuration) * 100;
             const progressBar = document.getElementById('watch-progress');
             const timeDisplay = document.getElementById('watch-time');
+            const badge = document.getElementById('progress-badge');
+            const remain = document.getElementById('remain-time');
             
             if (progressBar) {
                 const safePercentage = Math.min(Math.max(percentage, 0), 100);
                 progressBar.style.width = safePercentage + '%';
-                progressBar.textContent = Math.floor(safePercentage) + '%';
+                if (badge) badge.textContent = Math.floor(safePercentage) + '%';
             }
             
             if (timeDisplay) {
@@ -329,6 +331,13 @@
                 const totalMinutes = Math.floor(videoDuration / 60);
                 const totalSeconds = videoDuration % 60;
                 timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} / ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+            }
+
+            if (remain) {
+                const left = Math.max(requiredWatchTime - currentWatchTime, 0);
+                const m = Math.floor(left / 60);
+                const s = left % 60;
+                remain.textContent = `${m}:${s.toString().padStart(2,'0')} left`;
             }
         }
         
@@ -339,21 +348,24 @@
                 watchInstructions.innerHTML = `
                     <div class="flex">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
                         <div class="ml-3 flex-1">
-                            <h3 class="text-sm font-medium text-yellow-800">Watching Progress</h3>
+                            <h3 class="text-sm font-semibold text-blue-800">Watching Progress</h3>
                             <div class="mt-2">
-                                <div class="flex justify-between text-xs text-yellow-700 mb-1">
+                                <div class="flex justify-between text-xs text-blue-700 mb-2">
                                     <span id="watch-time">0:00 / ${Math.floor(videoDuration/60)}:${(videoDuration%60).toString().padStart(2, '0')}</span>
-                                    <span>${Math.floor(requiredWatchTime/60)}:${(requiredWatchTime%60).toString().padStart(2, '0')} required</span>
+                                    <span id="remain-time">${Math.floor(requiredWatchTime/60)}:${(requiredWatchTime%60).toString().padStart(2, '0')} left</span>
                                 </div>
-                                <div class="bg-yellow-200 rounded-full h-2 mb-2">
-                                    <div id="watch-progress" class="bg-yellow-600 h-2 rounded-full transition-all duration-300" style="width: 0%">0%</div>
+                                <div class="relative w-full bg-blue-100 rounded-full h-3 overflow-hidden shadow-inner">
+                                    <div class="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,.25)_25%,transparent_25%,transparent_50%,rgba(255,255,255,.25)_50%,rgba(255,255,255,.25)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-pulse"></div>
+                                    <div id="watch-progress" class="relative h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300" style="width:0%">
+                                        <span id="progress-badge" class="absolute -top-6 right-0 translate-x-1/2 text-[10px] font-semibold text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-full shadow">0%</span>
+                                    </div>
                                 </div>
-                                <p class="text-xs text-yellow-700">
+                                <p class="mt-2 text-xs text-blue-700">
                                     Watch ${requiredWatchTime} seconds to earn {{ $video->points_value }} points
                                 </p>
                             </div>
