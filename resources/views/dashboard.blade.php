@@ -673,7 +673,7 @@
                     <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-600' : 'text-gray-500' }}">More</span>
                 </button>
                 <!-- Dropdown Menu -->
-                <div id="mobile-dropdown" class="hidden absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+                <div id="mobile-dropdown" class="hidden absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden" style="max-height: calc(100vh - 120px); overflow-y: auto; bottom: calc(100% + 12px);">
                     <div class="py-2">
                         <a href="{{ route('level') }}" class="flex items-center px-5 py-3.5 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-700 transition-all duration-200 {{ request()->routeIs('level') ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700' : '' }}">
                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mr-3">
@@ -778,11 +778,61 @@
         window.addEventListener('resize', checkScreenSize);
         window.addEventListener('load', checkScreenSize);
 
-        // Mobile dropdown toggle
+        // Mobile dropdown toggle with smart positioning
         document.getElementById('mobile-menu-button')?.addEventListener('click', function(e) {
             e.stopPropagation();
             const dropdown = document.getElementById('mobile-dropdown');
-            dropdown.classList.toggle('hidden');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+                
+                if (!dropdown.classList.contains('hidden')) {
+                    // Calculate position to keep dropdown within viewport
+                    const rect = dropdown.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight;
+                    const viewportWidth = window.innerWidth;
+                    const buttonRect = this.getBoundingClientRect();
+                    
+                    // Reset positioning
+                    dropdown.style.bottom = '';
+                    dropdown.style.top = '';
+                    dropdown.style.left = '';
+                    dropdown.style.transform = '';
+                    
+                    // Check if dropdown goes off top of screen
+                    const spaceAbove = buttonRect.top;
+                    const dropdownHeight = rect.height || 200; // Approximate height
+                    
+                    if (spaceAbove < dropdownHeight + 20) {
+                        // Not enough space above, position below button
+                        dropdown.style.top = 'calc(100% + 12px)';
+                        dropdown.style.bottom = 'auto';
+                    } else {
+                        // Enough space above, position above button
+                        dropdown.style.bottom = 'calc(100% + 12px)';
+                        dropdown.style.top = 'auto';
+                    }
+                    
+                    // Ensure dropdown doesn't go off left/right edges
+                    const dropdownWidth = rect.width || 224; // 56 * 4 = 224px (w-56)
+                    const leftPosition = buttonRect.left + (buttonRect.width / 2) - (dropdownWidth / 2);
+                    
+                    if (leftPosition < 10) {
+                        dropdown.style.left = '10px';
+                        dropdown.style.transform = 'none';
+                    } else if (leftPosition + dropdownWidth > viewportWidth - 10) {
+                        dropdown.style.left = 'auto';
+                        dropdown.style.right = '10px';
+                        dropdown.style.transform = 'none';
+                    } else {
+                        dropdown.style.left = '50%';
+                        dropdown.style.transform = 'translateX(-50%)';
+                    }
+                    
+                    // Ensure max height doesn't exceed viewport
+                    const maxHeight = Math.min(dropdownHeight, viewportHeight - 120);
+                    dropdown.style.maxHeight = maxHeight + 'px';
+                }
+            }
         });
 
         // Close dropdown when clicking outside
