@@ -100,10 +100,22 @@ class AdminController extends Controller
     public function storeVideo(Request $request)
     {
         $this->checkAdminRole();
-        $validated = $request->validate([
+        
+        // Custom validation for YouTube URL
+        $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'youtube_url' => 'required|url',
+            'youtube_url' => [
+                'required',
+                'url',
+                function ($attribute, $value, $fail) {
+                    // Check if it's a valid YouTube URL
+                    $youtubeId = Video::extractYoutubeId($value);
+                    if (!$youtubeId) {
+                        $fail('The YouTube URL must be a valid YouTube video URL (youtube.com/watch?v=... or youtu.be/...).');
+                    }
+                },
+            ],
             'youtube_id' => 'nullable|string|max:50',
             'category' => 'required|string|max:50',
             'thumbnail_url' => 'nullable|url',
@@ -115,6 +127,24 @@ class AdminController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        $validated = $request->only([
+            'title', 'description', 'youtube_url', 'youtube_id', 'category',
+            'thumbnail_url', 'duration', 'points_value', 'assigned_date',
+            'max_watches_per_day', 'is_active'
+        ]);
+
+        // Automatically extract youtube_id from youtube_url if not provided
+        if (empty($validated['youtube_id'])) {
+            $validated['youtube_id'] = Video::extractYoutubeId($validated['youtube_url']);
+        }
+
+        // Validate that youtube_id was successfully extracted
+        if (empty($validated['youtube_id'])) {
+            return back()
+                ->withInput()
+                ->withErrors(['youtube_url' => 'Could not extract YouTube video ID from the provided URL. Please check the URL format.']);
+        }
+
         // If a file thumbnail is uploaded, store it and override thumbnail_url
         if ($request->hasFile('thumbnail')) {
             $path = $request->file('thumbnail')->store('thumbnails', 'public');
@@ -124,6 +154,16 @@ class AdminController extends Controller
         // Set default assigned_date to today if not provided
         if (empty($validated['assigned_date'])) {
             $validated['assigned_date'] = now()->toDateString();
+        }
+
+        // Set default max_watches_per_day if not provided
+        if (empty($validated['max_watches_per_day'])) {
+            $validated['max_watches_per_day'] = 1;
+        }
+
+        // Ensure is_active is set
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = true;
         }
 
         $video = Video::create($validated);
@@ -175,26 +215,40 @@ class AdminController extends Controller
                 $deposit->user->update(['has_deposited' => true]);
             }
 
-            // Award referral bonus if user has a referrer
+            // Award referral bonus if user has a referrer and hasn't been awarded yet
             if ($deposit->user->referrer_id) {
                 $referrer = $deposit->user->referrer;
                 
-                // Award $5 to referrer
-                $referrer->increment('balance', 5.00);
-                $referrer->increment('points', 100);
+                // Check if referral bonus has already been awarded for this user
+                $alreadyAwarded = \App\Models\UserEarning::where('user_id', $referrer->id)
+                    ->where('type', 'referral')
+                    ->where('description', 'like', "%{$deposit->user->name}%")
+                    ->exists();
                 
-                // Increment referrer's referral count
-                $referrer->increment('referrals_count');
-                
-                // Create earning record for referrer
-                \App\Models\UserEarning::create([
-                    'user_id' => $referrer->id,
-                    'points_earned' => 100,
-                    'dollar_value' => 5.00,
-                    'type' => 'referral',
-                    'description' => "Referral bonus for {$deposit->user->name}",
-                    'earned_date' => now()->toDateString(),
-                ]);
+                if (!$alreadyAwarded) {
+                    // Award $5 to referrer
+                    $referrer->increment('balance', 5.00);
+                    $referrer->increment('points', 100);
+                    
+                    // Increment referrer's referral count (only if not already counted)
+                    $referrer->increment('referrals_count');
+                    
+                    // Create earning record for referrer
+                    \App\Models\UserEarning::create([
+                        'user_id' => $referrer->id,
+                        'points_earned' => 100,
+                        'dollar_value' => 5.00,
+                        'type' => 'referral',
+                        'description' => "Referral bonus for {$deposit->user->name}",
+                        'earned_date' => now()->toDateString(),
+                    ]);
+                } else {
+                    // Sync the count to ensure accuracy (in case of data inconsistency)
+                    $actualCount = $referrer->actual_referrals_count;
+                    if ($referrer->referrals_count != $actualCount) {
+                        $referrer->update(['referrals_count' => $actualCount]);
+                    }
+                }
             }
         });
 

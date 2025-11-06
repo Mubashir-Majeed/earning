@@ -105,6 +105,19 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'referrer_id');
     }
 
+    /**
+     * Get the actual count of referrals who have deposited
+     * This ensures accurate count based on actual referrals with deposits
+     */
+    public function getActualReferralsCountAttribute(): int
+    {
+        return $this->referrals()
+            ->whereHas('deposits', function ($query) {
+                $query->where('status', 'completed');
+            })
+            ->count();
+    }
+
     // Helper methods
     public function canAccessTasks()
     {

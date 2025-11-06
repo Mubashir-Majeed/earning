@@ -49,10 +49,8 @@ class PaymentController extends Controller
                 'payment_details' => $request->payment_details,
             ]);
 
-            // If user has a referrer, increment their referrals_count
-            if ($user->referrer_id) {
-                $user->referrer()->increment('referrals_count');
-            }
+            // Note: referrals_count will be incremented when admin completes the deposit
+            // This ensures the count is only incremented once when payment is verified
         });
 
         return redirect()->route('dashboard')->with('success', 'Deposit request submitted successfully. Your account will be activated after payment verification.');

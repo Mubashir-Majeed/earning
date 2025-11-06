@@ -3,9 +3,12 @@
 @section('title', 'Referrals - VideoEarn')
 @section('page-title', 'Referrals')
 
-@section('quick-videos', $user->referrals_count)
-@section('quick-earnings', '$' . number_format($user->referrals_count * 5, 2))
-@section('quick-points', $user->referrals_count * 100)
+@php
+    $actualReferralsCount = $user->actual_referrals_count;
+@endphp
+@section('quick-videos', $actualReferralsCount)
+@section('quick-earnings', '$' . number_format($actualReferralsCount * 5, 2))
+@section('quick-points', $actualReferralsCount * 100)
 
 @section('content')
     <!-- Referral Stats -->
@@ -15,7 +18,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 mb-1">Total Referrals</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $user->referrals_count }}</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $actualReferralsCount }}</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <i class="fas fa-users text-blue-600 text-xl"></i>
@@ -28,7 +31,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 mb-1">Referral Earnings</p>
-                    <p class="text-3xl font-bold text-gray-900">${{ number_format($user->referrals_count * 5, 2) }}</p>
+                    <p class="text-3xl font-bold text-gray-900">${{ number_format($actualReferralsCount * 5, 2) }}</p>
                 </div>
                 <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <i class="fas fa-dollar-sign text-green-600 text-xl"></i>
@@ -41,7 +44,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-600 mb-1">Referral Points</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $user->referrals_count * 100 }}</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ $actualReferralsCount * 100 }}</p>
                 </div>
                 <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <i class="fas fa-star text-purple-600 text-xl"></i>
