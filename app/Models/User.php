@@ -37,6 +37,12 @@ class User extends Authenticatable
         'phone',
         'payment_method',
         'payment_details',
+        'investment_package',
+        'pending_deposit_amount',
+        'pending_package_code',
+        'bep20_address',
+        'wallet_bound_at',
+        'channel_subscribed_at',
     ];
 
     /**
@@ -64,8 +70,11 @@ class User extends Authenticatable
             'has_deposited' => 'boolean',
             'is_active' => 'boolean',
             'initial_deposit_amount' => 'decimal:2',
+            'pending_deposit_amount' => 'decimal:2',
             'monthly_withdrawals_period' => 'date',
             'unwithdrawable_balance_min' => 'decimal:2',
+            'wallet_bound_at' => 'datetime',
+            'channel_subscribed_at' => 'datetime',
         ];
     }
 
@@ -142,28 +151,115 @@ class User extends Authenticatable
         return ($level['withdrawal_fee_percent'] ?? 5) / 100.0;
     }
 
+    public function hasBoundWallet(): bool
+    {
+        return !empty($this->bep20_address);
+    }
+
+    public function hasSubscribedChannel(): bool
+    {
+        return !is_null($this->channel_subscribed_at);
+    }
+
+    public function referralCountsByPackage(): array
+    {
+        $packages = array_keys(config('investment.packages', []));
+        $counts = array_fill_keys($packages, 0);
+
+        $referralPackages = $this->referrals()
+            ->where('has_deposited', true)
+            ->whereNotNull('investment_package')
+            ->pluck('investment_package');
+
+        foreach ($referralPackages as $packageCode) {
+            if (isset($counts[$packageCode])) {
+                $counts[$packageCode]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    public function referralRequirementRules(): array
+    {
+        if (!$this->investment_package) {
+            return [];
+        }
+
+        return config('investment.referral_rules.' . $this->investment_package, []);
+    }
+
+    public function referralProgress(): array
+    {
+        $rules = $this->referralRequirementRules();
+        $counts = $this->referralCountsByPackage();
+
+        return collect($rules)->map(function (array $rule) use ($counts) {
+            $package = $rule['package'];
+            $required = (int) ($rule['count'] ?? 0);
+            $current = $counts[$package] ?? 0;
+
+            return [
+                'package' => $package,
+                'required' => $required,
+                'current' => $current,
+                'remaining' => max(0, $required - $current),
+                'description' => $rule['description'] ?? '',
+                'is_alternative' => (bool) ($rule['is_alternative'] ?? false),
+            ];
+        })->toArray();
+    }
+
+    public function scopeWithoutAdmins($query)
+    {
+        return $query->whereDoesntHave('roles', function ($roleQuery) {
+            $roleQuery->where('name', 'admin');
+        });
+    }
+
+    public function withdrawableProfit(): float
+    {
+        $balance = (float) ($this->balance ?? 0);
+        $locked = (float) ($this->unwithdrawable_balance_min ?? 0);
+        return max(0.0, $balance - $locked);
+    }
+
+    public function maxWithdrawableForPackage(): float
+    {
+        $package = $this->investment_package ? config('investment.packages.' . $this->investment_package) : null;
+        $cap = $package['withdrawal_cap'] ?? $this->withdrawableProfit();
+        return min($this->withdrawableProfit(), (float) $cap);
+    }
+
     public function meetsReferralRequirementForWithdrawal(): bool
     {
-        if ($this->level === 'level_1') {
-            return $this->referrals()->count() >= 1;
+        if (!$this->has_deposited || !$this->investment_package) {
+            return false;
         }
-        if ($this->level === 'level_2') {
-            if ($this->initial_deposit_amount >= 100) {
-                return $this->referrals()->count() >= 6;
+
+        $rules = $this->referralRequirementRules();
+        if (empty($rules)) {
+            return true;
+        }
+
+        $counts = $this->referralCountsByPackage();
+
+        foreach ($rules as $rule) {
+            $packageCode = $rule['package'] ?? null;
+            $required = (int) ($rule['count'] ?? 0);
+
+            if (!$packageCode || $required <= 0) {
+                continue;
             }
-            if ($this->initial_deposit_amount >= 50) {
-                return $this->referrals()->count() >= 12;
+
+            $current = $counts[$packageCode] ?? 0;
+
+            if ($current >= $required) {
+                return true;
             }
         }
-        if ($this->level === 'level_3') {
-            if ($this->initial_deposit_amount >= 100) {
-                return $this->referrals()->count() >= 15;
-            }
-            if ($this->initial_deposit_amount >= 50) {
-                return $this->referrals()->count() >= 25;
-            }
-        }
-        return true;
+
+        return false;
     }
 
     public function withinMonthlyWithdrawalQuota(): bool
@@ -193,10 +289,27 @@ class User extends Authenticatable
 
     public function canWithdraw(): bool
     {
-        return $this->has_deposited && 
-               $this->balance >= 10 && 
-               $this->meetsReferralRequirementForWithdrawal() && 
-               $this->withinMonthlyWithdrawalQuota();
+        if (!$this->has_deposited || !$this->investment_package) {
+            return false;
+        }
+
+        if ($this->withdrawableProfit() < 10) {
+            return false;
+        }
+
+        if (!$this->hasBoundWallet() || !$this->hasSubscribedChannel()) {
+            return false;
+        }
+
+        if (!$this->meetsReferralRequirementForWithdrawal()) {
+            return false;
+        }
+
+        if (!$this->withinMonthlyWithdrawalQuota()) {
+            return false;
+        }
+
+        return true;
     }
 
     public function requiredReferralsForWithdrawal(): int

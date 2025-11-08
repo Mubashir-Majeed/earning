@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', $video->title . ' - VideoEarn')
+@section('title', $video->title . ' - Earn Quest')
 @section('page-title', $video->title)
 
 @section('content')

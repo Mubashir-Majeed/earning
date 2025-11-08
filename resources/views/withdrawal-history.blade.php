@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', 'Withdrawal History - VideoEarn')
+@section('title', 'Withdrawal History - Earn Quest')
 @section('page-title', 'Withdrawal History')
 
 @section('content')

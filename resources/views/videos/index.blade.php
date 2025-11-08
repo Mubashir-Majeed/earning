@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', "Today's Video Tasks - VideoEarn")
+@section('title', "Today's Video Tasks - Earn Quest")
 @section('page-title', "Today's Video Tasks")
 
 @section('content')

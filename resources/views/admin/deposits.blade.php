@@ -1,9 +1,13 @@
 @extends('layouts.admin')
 
-@section('title', 'Deposits Management - VideoEarn')
+@section('title', 'Deposits Management - Earn Quest')
 @section('page-title', 'Deposits Management')
 
 @section('content')
+@php
+    $packageCatalog = $packages ?? config('investment.packages');
+@endphp
+
 <div class="space-y-6">
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
@@ -39,8 +43,9 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Amount Range</label>
                 <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Amounts</option>
+                    <option value="35">$35</option>
+                    <option value="50">$50</option>
                     <option value="100">$100</option>
-                    <option value=">100">Above $100</option>
                 </select>
             </div>
             <div class="flex items-end">
@@ -59,6 +64,8 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested</th>
@@ -82,8 +89,14 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">${{ number_format($deposit->amount, 2) }}</div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ data_get($packageCatalog, $deposit->package_code.'.name', '—') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                {{ $deposit->payment_details }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ ucfirst($deposit->payment_method) }}</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ strtoupper($deposit->payment_method) }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($deposit->status === 'completed')
@@ -114,7 +127,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="8" class="px-6 py-12 text-center">
                                 <div class="text-gray-500">
                                     <i class="fas fa-credit-card text-4xl mb-4"></i>
                                     <p class="text-lg">No deposits found</p>

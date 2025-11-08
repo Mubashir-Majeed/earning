@@ -26,13 +26,41 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
+        if (array_key_exists('bep20_address', $validated)) {
+            $submittedAddress = $validated['bep20_address'];
+
+            if (empty($submittedAddress)) {
+                unset($validated['bep20_address']);
+            } else {
+                $normalizedAddress = strtolower($submittedAddress);
+
+                if ($user->hasBoundWallet()) {
+                    if (strcasecmp($user->bep20_address, $normalizedAddress) !== 0) {
+                        return Redirect::route('profile.edit')
+                            ->withErrors(['bep20_address' => 'Your wallet is already bound. Contact support to update it.'])
+                            ->withInput();
+                    }
+
+                    unset($validated['bep20_address']);
+                } else {
+                    $validated['bep20_address'] = $normalizedAddress;
+                    $validated['wallet_bound_at'] = now();
+                    $validated['payment_method'] = 'bep20';
+                    $validated['payment_details'] = $normalizedAddress;
+                }
+            }
+        }
+
+        $user->fill($validated);
+
+        if ($user->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

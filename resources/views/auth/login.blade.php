@@ -94,7 +94,7 @@
                 <div class="w-full border-t border-white/20"></div>
             </div>
             <div class="relative flex justify-center text-sm">
-                <span class="px-4 bg-slate-900 text-gray-400">New to VideoEarn?</span>
+                <span class="px-4 bg-slate-900 text-gray-400">New to Earn Quest?</span>
             </div>
         </div>
 

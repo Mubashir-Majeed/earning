@@ -1,9 +1,13 @@
 @extends('layouts.admin')
 
-@section('title', 'Withdrawals Management - VideoEarn')
+@section('title', 'Withdrawals Management - Earn Quest')
 @section('page-title', 'Withdrawals Management')
 
 @section('content')
+@php
+    $packageCatalog = config('investment.packages');
+@endphp
+
 <div class="space-y-6">
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
@@ -73,6 +77,12 @@
                             Amount
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Package
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Wallet
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Fee
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -112,6 +122,12 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">${{ number_format($withdrawal->amount, 2) }}</div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ data_get($packageCatalog, $withdrawal->user->investment_package.'.name', '—') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                                {{ $withdrawal->withdrawal_details }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">${{ number_format($withdrawal->fee_amount, 2) }}</div>
                             </td>
@@ -120,16 +136,8 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    @if($withdrawal->withdrawal_method === 'paypal')
-                                        <i class="fab fa-paypal text-blue-600 mr-2"></i>
-                                    @elseif($withdrawal->withdrawal_method === 'bank')
-                                        <i class="fas fa-university text-green-600 mr-2"></i>
-                                    @elseif($withdrawal->withdrawal_method === 'crypto')
-                                        <i class="fab fa-bitcoin text-orange-600 mr-2"></i>
-                                    @else
-                                        <i class="fas fa-credit-card text-gray-600 mr-2"></i>
-                                    @endif
-                                    <span class="text-sm text-gray-900 capitalize">{{ $withdrawal->withdrawal_method }}</span>
+                                    <i class="fas fa-wallet text-blue-600 mr-2"></i>
+                                    <span class="text-sm text-gray-900">BEP20</span>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -194,7 +202,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
+                            <td colspan="11" class="px-6 py-12 text-center">
                                 <div class="text-gray-500">
                                     <i class="fas fa-money-bill-wave text-4xl mb-4"></i>
                                     <p class="text-lg">No withdrawals found</p>

@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>@yield('title', 'VideoEarn - Earn Money Watching Videos')</title>
+        <title>@yield('title', 'Earn Quest - Earn Money Watching Videos')</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,7 +88,7 @@
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center">
                         <a href="/" class="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
-                            <i class="fab fa-youtube text-red-500 mr-2"></i>VideoEarn
+                            <i class="fab fa-youtube text-red-500 mr-2"></i>Earn Quest
                         </a>
                     </div>
                     <div class="flex items-center space-x-4">

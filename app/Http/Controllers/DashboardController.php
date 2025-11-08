@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use App\Services\VideoEarningService;
 use Carbon\Carbon;
 
@@ -40,7 +41,19 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        return view('dashboard', compact('user', 'stats', 'todayTasks', 'recentEarnings'));
+        $package = $user->investment_package ? config('investment.packages.' . $user->investment_package) : null;
+        $referralProgress = $user->referralProgress();
+        $referralCounts = $user->referralCountsByPackage();
+
+        return view('dashboard', compact(
+            'user',
+            'stats',
+            'todayTasks',
+            'recentEarnings',
+            'package',
+            'referralProgress',
+            'referralCounts'
+        ));
     }
 
     public function deposit()
@@ -51,14 +64,17 @@ class DashboardController extends Controller
             return redirect()->route('dashboard')->with('info', 'You have already made your initial deposit.');
         }
 
-        return view('deposit');
+        $packages = config('investment.packages', []);
+        return view('deposit', compact('user', 'packages'));
     }
 
     public function withdrawal()
     {
         $user = auth()->user();
         $stats = $this->videoEarningService->getUserStats($user);
-        return view('withdrawal', compact('user', 'stats'));
+        $package = $user->investment_package ? config('investment.packages.' . $user->investment_package) : null;
+        $referralProgress = $user->referralProgress();
+        return view('withdrawal', compact('user', 'stats', 'package', 'referralProgress'));
     }
 
     public function earnings()
@@ -88,7 +104,10 @@ class DashboardController extends Controller
         $user = auth()->user();
         $referrals = $user->referrals()->latest()->paginate(12);
         $referralLink = route('register', ['ref' => $user->referral_code]);
-        return view('referrals', compact('user', 'referrals', 'referralLink'));
+        $packages = config('investment.packages', []);
+        $referralCounts = $user->referralCountsByPackage();
+        $referralProgress = $user->referralProgress();
+        return view('referrals', compact('user', 'referrals', 'referralLink', 'packages', 'referralCounts', 'referralProgress'));
     }
 
     public function level()
@@ -99,6 +118,21 @@ class DashboardController extends Controller
             'user' => $user,
             'config' => $config,
         ]);
+    }
+
+    public function confirmChannelSubscription(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->hasSubscribedChannel()) {
+            return back()->with('info', 'Channel subscription already confirmed.');
+        }
+
+        $user->update([
+            'channel_subscribed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Thanks for subscribing to our channel!');
     }
 
 }

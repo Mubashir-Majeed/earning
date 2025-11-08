@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', 'My Earnings - VideoEarn')
+@section('title', 'My Earnings - Earn Quest')
 @section('page-title', 'My Earnings')
 
 @section('quick-videos', $stats['total_videos_watched'])

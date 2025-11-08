@@ -2,186 +2,264 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-        <title>@yield('title', 'Dashboard - VideoEarn')</title>
+    <title>@yield('title', 'Dashboard - Earn Quest')</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @vite(['resources/css/app.css','resources/js/app.js'])
     <style>
-        /* Force hide sidebar on mobile, show on desktop - HIGHEST PRIORITY */
-        @media screen and (max-width: 1023px) {
-            body #sidebar,
-            html body #sidebar,
-            body > #sidebar {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-                width: 0 !important;
-                height: 0 !important;
-                overflow: hidden !important;
-                position: absolute !important;
-                left: -9999px !important;
-                z-index: -1 !important;
-            }
-            body #bottom-nav,
-            html body #bottom-nav,
-            body > #bottom-nav {
-                display: flex !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                z-index: 9999 !important;
-            }
-            body .main-content-wrapper,
-            html body .main-content-wrapper {
-                margin-left: 0 !important;
-                padding-left: 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-            }
+        body {
+            background: linear-gradient(120deg, #e0e7ff 0%, #f1f5f9 40%, #e2e8f0 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        @media screen and (min-width: 1024px) {
-            body #sidebar,
-            html body #sidebar {
-                display: flex !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                width: 16rem !important;
-                height: auto !important;
-                position: fixed !important;
-                left: 0 !important;
-                z-index: 50 !important;
-            }
-            body #bottom-nav,
-            html body #bottom-nav {
-                display: none !important;
-                visibility: hidden !important;
-            }
-            body .main-content-wrapper {
-                margin-left: 16rem !important;
-            }
-        }
-        
-        /* Default mobile-first: hide sidebar, show bottom nav */
-        #sidebar {
-            display: none;
-        }
-        #bottom-nav {
-            display: flex;
-        }
+
         .main-content-wrapper {
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            min-height: 100vh;
             margin-left: 0;
             width: 100%;
         }
-        
-        /* Desktop override */
-        @media (min-width: 1024px) {
-            #sidebar {
-                display: flex;
-            }
-            #bottom-nav {
-                display: none;
-            }
-            .main-content-wrapper {
-                margin-left: 16rem;
-            }
+
+        .sidebar-container {
+            position: relative;
+            height: 100%;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 55%),
+                        linear-gradient(200deg, #1f2937 0%, #0f172a 55%, #090d16 100%);
+            color: rgba(226,232,240,0.85);
+            border-right: 1px solid rgba(148,163,184,0.18);
+            box-shadow: 10px 0 30px -28px rgba(15,23,42,0.85);
         }
-        
-        /* Bottom Navigation Bar Styling */
+
+        .sidebar-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(140deg, rgba(59,130,246,0.22), rgba(79,70,229,0.18));
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .sidebar-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(129,140,248,0.25));
+            border-bottom: 1px solid rgba(148,163,184,0.12);
+        }
+
+        .sidebar-nav {
+            max-height: calc(100vh - 240px);
+            overflow-y: auto;
+            padding-bottom: 2rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148,163,184,0.35) transparent;
+        }
+        .sidebar-nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(148,163,184,0.35);
+            border-radius: 999px;
+        }
+
+        .sidebar-title {
+            letter-spacing: 0.3em;
+            font-weight: 600;
+            color: rgba(226,232,240,0.55);
+            text-transform: uppercase;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.9rem 1.05rem;
+            border-radius: 1rem;
+            font-weight: 500;
+            color: rgba(226,232,240,0.75);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .sidebar-link:hover {
+            background: linear-gradient(120deg, rgba(59,130,246,0.20), rgba(129,140,248,0.20));
+            color: #ffffff;
+            transform: translateX(3px);
+        }
+        .sidebar-link.active {
+            background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(109,40,217,0.3));
+            color: #ffffff;
+            box-shadow: 0 16px 32px -24px rgba(59,130,246,0.85);
+        }
+
+        .sidebar-icon {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(148,163,184,0.25);
+            color: inherit;
+            transition: all 0.25s ease;
+        }
+        .sidebar-link.active .sidebar-icon {
+            background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(129,140,248,0.95));
+            color: #ffffff;
+            box-shadow: 0 14px 30px -18px rgba(79,70,229,0.75);
+        }
+        .sidebar-link:hover .sidebar-icon {
+            background: linear-gradient(135deg, rgba(59,130,246,0.6), rgba(129,140,248,0.6));
+            color: #ffffff;
+        }
+        .sidebar-link::after {
+            content: '';
+            position: absolute;
+            right: 0.55rem;
+            top: 50%;
+            width: 0.35rem;
+            height: 0.35rem;
+            background: rgba(148,163,184,0.35);
+            border-radius: 9999px;
+            transform: translateY(-50%);
+            transition: background 0.25s ease;
+        }
+        .sidebar-link.active::after { background: #60a5fa; }
+
+        .sidebar-profile {
+            background: rgba(255,255,255,0.92);
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid rgba(148,163,184,0.12);
+            box-shadow: 0 16px 34px -28px rgba(15,23,42,0.65);
+        }
+
+        #sidebar {
+            display: none;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 55%),
+                        linear-gradient(200deg, #1f2937 0%, #0f172a 55%, #090d16 100%);
+            border-right: 1px solid rgba(148,163,184,0.18);
+            box-shadow: 10px 0 30px -28px rgba(15,23,42,0.85);
+        }
         #bottom-nav {
+            display: flex;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            background: rgba(15,23,42,0.92);
         }
-        
-        #bottom-nav a,
-        #bottom-nav button {
-            -webkit-tap-highlight-color: transparent;
+
+        header.user-header {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(241,245,249,0.7);
+            box-shadow: 0 20px 40px -24px rgba(15,23,42,0.25);
         }
-        
-        /* Safe area for devices with notches */
-        .safe-area-bottom {
-            padding-bottom: env(safe-area-inset-bottom, 0);
-        }
-        
-        /* Bottom nav buttons - full width, no gaps */
-        #bottom-nav > div {
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        
-        #bottom-nav a,
-        #bottom-nav > div > div {
-            flex: 1 1 0%;
-            min-width: 0;
-            max-width: 100%;
+
+        @media (min-width: 1024px) {
+            body #sidebar { display: flex !important; width: 18rem !important; }
+            body #bottom-nav { display: none !important; }
+            body .main-content-wrapper { margin-left: 18rem !important; width: calc(100% - 18rem); }
         }
     </style>
 </head>
-<body class="font-inter bg-gray-50 text-gray-900 antialiased">
-    <!-- Sidebar - Hidden on mobile, visible on desktop (lg breakpoint = 1024px) -->
-    <div class="fixed inset-y-0 left-0 z-50 bg-white shadow-lg" id="sidebar">
-        <div class="flex flex-col w-full">
-            <div class="flex items-center justify-center h-16 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                        <i class="fas fa-play-circle text-blue-600 text-lg"></i>
+<body class="font-inter text-gray-900 antialiased">
+    <div class="fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out" id="sidebar">
+        <div class="sidebar-container h-full flex flex-col">
+            <div class="sidebar-header flex items-center justify-between h-20 px-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-11 h-11 bg-white/15 rounded-2xl flex items-center justify-center shadow-inner border border-white/20">
+                        <i class="fas fa-shield-heart text-white text-lg"></i>
                     </div>
-                    <span class="text-white font-bold text-lg">VideoEarn</span>
+                    <div class="leading-tight">
+                        <span class="block text-white font-semibold text-lg tracking-[0.28em] uppercase">Earn Quest</span>
+                    </div>
                 </div>
+                <span class="hidden lg:inline-flex items-center px-3 py-1 text-[10px] font-semibold text-white/80 bg-white/10 rounded-full backdrop-blur-sm border border-white/20">Member Access</span>
             </div>
-            <nav class="mt-8 flex-1 overflow-y-auto">
-                <div class="px-4 space-y-2">
-                    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('dashboard') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+
+            @php
+                $userLinks = [
+                    ['label' => 'Dashboard', 'icon' => 'fa-gauge-high', 'route' => 'dashboard', 'active' => ['dashboard']],
+                    ['label' => 'Watch Videos', 'icon' => 'fa-video', 'route' => 'videos.index', 'active' => ['videos.*']],
+                    ['label' => 'Activate Package', 'icon' => 'fa-gem', 'route' => 'deposit', 'active' => ['deposit']],
+                    ['label' => 'My Earnings', 'icon' => 'fa-coins', 'route' => 'earnings', 'active' => ['earnings']],
+                    ['label' => 'Withdrawals', 'icon' => 'fa-wallet', 'route' => 'withdrawal', 'active' => ['withdrawal']],
+                    ['label' => 'Withdrawal History', 'icon' => 'fa-clock-rotate-left', 'route' => 'withdrawal.history', 'active' => ['withdrawal.history']],
+                    ['label' => 'Referrals', 'icon' => 'fa-user-group', 'route' => 'referrals', 'active' => ['referrals']],
+                    ['label' => 'My Level', 'icon' => 'fa-trophy', 'route' => 'level', 'active' => ['level']],
+                    ['label' => 'Profile', 'icon' => 'fa-user', 'route' => 'profile.edit', 'active' => ['profile.*']],
+                ];
+            @endphp
+
+            <nav class="mt-4 px-5 sidebar-nav">
+                <p class="text-xs sidebar-title mb-4">Navigation</p>
+                @foreach($userLinks as $link)
+                    @php $active = request()->routeIs($link['active']); @endphp
+                    <a href="{{ route($link['route']) }}" class="sidebar-link {{ $active ? 'active' : '' }}">
+                        <span class="sidebar-icon">
+                            <i class="fas {{ $link['icon'] }}"></i>
+                        </span>
+                        <span class="relative">
+                            {{ $link['label'] }}
+                            @if($active)
+                                <span class="absolute -right-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/60"></span>
+                            @endif
+                        </span>
                     </a>
-                    <a href="{{ route('videos.index') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('videos.*') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-video mr-3"></i>Watch Videos
-                    </a>
-                    <a href="{{ route('earnings') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('earnings') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-chart-line mr-3"></i>My Earnings
-                    </a>
-                    <a href="{{ route('withdrawal.history') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('withdrawal.*') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-money-bill-wave mr-3"></i>Withdrawals
-                    </a>
-                    <a href="{{ route('referrals') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('referrals') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-users mr-3"></i>Referrals
-                    </a>
-                    <a href="{{ route('level') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('level') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-trophy mr-3"></i>My Level
-                    </a>
-                    <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-700 {{ request()->routeIs('profile.*') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : 'text-gray-700' }}">
-                        <i class="fas fa-user mr-3"></i>Profile
-                    </a>
-                </div>
+                @endforeach
             </nav>
-            <div class="p-4 bg-gray-50 border-t">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center"><i class="fas fa-user text-white"></i></div>
-                    <div class="flex-1">
-                        <p class="text-sm font-medium">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-gray-500">Member</p>
+
+            <div class="px-5 pb-6 mt-auto">
+                <div class="sidebar-profile">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-slate-500">Member</p>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="text-slate-400 hover:text-red-500 transition" title="Logout">
+                                <i class="fas fa-arrow-right-from-bracket"></i>
+                            </button>
+                        </form>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="text-gray-400 hover:text-red-600"><i class="fas fa-sign-out-alt"></i></button></form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content-wrapper pb-24" style="margin-left: 0;">
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-            <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-                <div class="flex items-center space-x-3 sm:space-x-4">
-                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">@yield('page-title', 'Dashboard')</h1>
+    <div class="main-content-wrapper pb-24 lg:ml-72" style="padding-top: 1.5rem;">
+        <header class="user-header sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-lg">
+            <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-slate-800">@yield('page-title', 'Dashboard')</h1>
                 </div>
-                <div class="hidden lg:flex items-center space-x-6">
-                    <div class="text-center"><p class="text-sm text-gray-500">Videos Watched</p><p class="text-lg font-semibold text-green-600">@yield('quick-videos', '—')</p></div>
-                    <div class="text-center"><p class="text-sm text-gray-500">Total Earnings</p><p class="text-lg font-semibold text-blue-600">@yield('quick-earnings', '—')</p></div>
-                    <div class="text-center"><p class="text-sm text-gray-500">Points</p><p class="text-lg font-semibold text-purple-600">@yield('quick-points', '—')</p></div>
+                <div class="flex items-center space-x-4">
+                    <button class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                    </button>
+                    <div class="hidden md:flex items-center space-x-6">
+                        <div class="text-center">
+                            <p class="text-sm text-slate-500">Videos Watched</p>
+                            <p class="text-lg font-semibold text-green-500">@yield('quick-videos', '—')</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-slate-500">Total Earnings</p>
+                            <p class="text-lg font-semibold text-blue-600">@yield('quick-earnings', '—')</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm text-slate-500">Points</p>
+                            <p class="text-lg font-semibold text-purple-500">@yield('quick-points', '—')</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -190,77 +268,46 @@
         </main>
     </div>
 
-    <!-- Bottom Navigation Bar - Mobile Only (hidden on lg screens and above) -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl" style="display: flex;">
-        <div class="flex items-center h-20 w-full safe-area-bottom" style="gap: 0;">
-            <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ request()->routeIs('dashboard') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500' }}">
-                <div class="relative">
-                    @if(request()->routeIs('dashboard'))
-                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
-                    @endif
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-blue-50' : 'group-hover:bg-gray-50' }}">
-                        <i class="fas fa-home text-xl {{ request()->routeIs('dashboard') ? 'text-blue-600' : 'text-gray-500' }}"></i>
-                    </div>
-                </div>
-                <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('dashboard') ? 'text-blue-600' : 'text-gray-500' }}">Dashboard</span>
-            </a>
-            <a href="{{ route('videos.index') }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ request()->routeIs('videos.*') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500' }}">
-                <div class="relative">
-                    @if(request()->routeIs('videos.*'))
-                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
-                    @endif
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('videos.*') ? 'bg-blue-50' : 'group-hover:bg-gray-50' }}">
-                        <i class="fas fa-play-circle text-xl {{ request()->routeIs('videos.*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
-                    </div>
-                </div>
-                <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('videos.*') ? 'text-blue-600' : 'text-gray-500' }}">Videos</span>
-            </a>
-            <a href="{{ route('earnings') }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ request()->routeIs('earnings') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500' }}">
-                <div class="relative">
-                    @if(request()->routeIs('earnings'))
-                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
-                    @endif
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('earnings') ? 'bg-blue-50' : 'group-hover:bg-gray-50' }}">
-                        <i class="fas fa-chart-line text-xl {{ request()->routeIs('earnings') ? 'text-blue-600' : 'text-gray-500' }}"></i>
-                    </div>
-                </div>
-                <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('earnings') ? 'text-blue-600' : 'text-gray-500' }}">Earnings</span>
-            </a>
-            <a href="{{ route('withdrawal.history') }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ request()->routeIs('withdrawal.*') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500' }}">
-                <div class="relative">
-                    @if(request()->routeIs('withdrawal.*'))
-                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
-                    @endif
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('withdrawal.*') ? 'bg-blue-50' : 'group-hover:bg-gray-50' }}">
-                        <i class="fas fa-wallet text-xl {{ request()->routeIs('withdrawal.*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
-                    </div>
-                </div>
-                <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('withdrawal.*') ? 'text-blue-600' : 'text-gray-500' }}">Withdraw</span>
-            </a>
-            <a href="{{ route('referrals') }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ request()->routeIs('referrals') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500' }}">
-                <div class="relative">
-                    @if(request()->routeIs('referrals'))
-                        <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
-                    @endif
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('referrals') ? 'bg-blue-50' : 'group-hover:bg-gray-50' }}">
-                        <i class="fas fa-users text-xl {{ request()->routeIs('referrals') ? 'text-blue-600' : 'text-gray-500' }}"></i>
-                    </div>
-                </div>
-                <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('referrals') ? 'text-blue-600' : 'text-gray-500' }}">Referrals</span>
-            </a>
-            <div class="relative flex flex-col items-center justify-center flex-1 h-full min-w-0">
-                <button id="mobile-menu-button" class="flex flex-col items-center justify-center relative group transition-all duration-200 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-500' }}">
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 border-t border-white/20 shadow-2xl">
+        <div class="flex items-center h-20 w-full safe-area-bottom px-2 gap-0">
+            @php
+                $bottomLinks = [
+                    ['label' => 'Dashboard', 'icon' => 'fa-home', 'route' => 'dashboard', 'active' => ['dashboard']],
+                    ['label' => 'Videos', 'icon' => 'fa-video', 'route' => 'videos.index', 'active' => ['videos.*']],
+                    ['label' => 'Package', 'icon' => 'fa-gem', 'route' => 'deposit', 'active' => ['deposit']],
+                    ['label' => 'Earnings', 'icon' => 'fa-chart-line', 'route' => 'earnings', 'active' => ['earnings']],
+                    ['label' => 'Withdraw', 'icon' => 'fa-wallet', 'route' => 'withdrawal', 'active' => ['withdrawal']],
+                    ['label' => 'Referrals', 'icon' => 'fa-user-group', 'route' => 'referrals', 'active' => ['referrals']],
+                ];
+            @endphp
+
+            @foreach($bottomLinks as $link)
+                @php $active = request()->routeIs($link['active']); @endphp
+                <a href="{{ route($link['route']) }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ $active ? 'text-blue-200' : 'text-slate-300 hover:text-blue-200' }}">
                     <div class="relative">
-                        @if(request()->routeIs('level') || request()->routeIs('profile.*'))
-                            <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
+                        @if($active)
+                            <div class="absolute -top-1 right-0 w-full h-full rounded-2xl border border-blue-300/40 bg-blue-500/10"></div>
                         @endif
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'bg-blue-50' : 'group-hover:bg-gray-50' }}">
-                            <i class="fas fa-ellipsis-h text-xl {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-600' : 'text-gray-500' }}"></i>
+                        <div class="w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-200 {{ $active ? 'bg-blue-500/15 border-blue-300/40 text-blue-200 shadow-lg shadow-blue-500/20' : 'border-transparent group-hover:bg-white/10' }}">
+                            <i class="fas {{ $link['icon'] }} text-lg"></i>
                         </div>
                     </div>
-                    <span class="text-[10px] font-semibold mt-1 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-600' : 'text-gray-500' }}">More</span>
+                    <span class="text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ $active ? 'text-blue-200' : 'text-slate-300' }}">{{ $link['label'] }}</span>
+                </a>
+            @endforeach
+
+            <div class="relative flex flex-col items-center justify-center flex-1 h-full min-w-0">
+                <button id="mobile-menu-button" class="flex flex-col items-center justify-center relative group transition-all duration-200 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-200' : 'text-slate-300 hover:text-blue-200' }}">
+                    <div class="relative">
+                        @if(request()->routeIs('level') || request()->routeIs('profile.*'))
+                            <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-200 rounded-full"></div>
+                        @endif
+                        <div class="w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-200 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'bg-blue-500/15 border-blue-300/40 text-blue-200' : 'border-transparent group-hover:bg-white/10' }}">
+                            <i class="fas fa-ellipsis-h text-lg"></i>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-200' : 'text-slate-300' }}">More</span>
                 </button>
-                <!-- Dropdown Menu -->
                 <div id="mobile-dropdown" class="hidden absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden" style="max-height: calc(100vh - 120px); overflow-y: auto; bottom: calc(100% + 12px);">
                     <div class="py-2">
                         <a href="{{ route('level') }}" class="flex items-center px-5 py-3.5 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-700 transition-all duration-200 {{ request()->routeIs('level') ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700' : '' }}">
@@ -293,90 +340,6 @@
     </nav>
     
     <script>
-        // Run IMMEDIATELY - before page renders
-        (function() {
-            const width = window.innerWidth || document.documentElement.clientWidth;
-            const sidebar = document.getElementById('sidebar');
-            const bottomNav = document.getElementById('bottom-nav');
-            const mainContent = document.querySelector('.main-content-wrapper');
-            
-            if (width < 1024) {
-                // Mobile - hide sidebar, show bottom nav
-                if (sidebar) {
-                    sidebar.style.cssText = 'display: none !important; visibility: hidden !important; width: 0 !important; height: 0 !important; position: absolute !important; left: -9999px !important;';
-                }
-                if (bottomNav) {
-                    bottomNav.style.cssText = 'display: flex !important; visibility: visible !important;';
-                }
-                if (mainContent) {
-                    mainContent.style.cssText = 'margin-left: 0 !important; width: 100% !important;';
-                }
-            } else {
-                // Desktop - show sidebar, hide bottom nav
-                if (sidebar) {
-                    sidebar.style.cssText = 'display: flex !important; visibility: visible !important; width: 16rem !important; position: fixed !important; left: 0 !important;';
-                }
-                if (bottomNav) {
-                    bottomNav.style.cssText = 'display: none !important; visibility: hidden !important;';
-                }
-                if (mainContent) {
-                    mainContent.style.cssText = 'margin-left: 16rem !important;';
-                }
-            }
-        })();
-        
-        // Ensure sidebar is hidden on mobile and bottom nav is visible
-        function checkScreenSize() {
-            const sidebar = document.getElementById('sidebar');
-            const bottomNav = document.getElementById('bottom-nav');
-            const mainContent = document.querySelector('.main-content-wrapper');
-            const width = window.innerWidth;
-            
-            if (width < 1024) {
-                // Mobile view - hide sidebar, show bottom nav
-                if (sidebar) {
-                    sidebar.style.display = 'none';
-                    sidebar.style.visibility = 'hidden';
-                    sidebar.style.width = '0';
-                    sidebar.style.position = 'absolute';
-                    sidebar.style.left = '-9999px';
-                }
-                if (bottomNav) {
-                    bottomNav.style.display = 'flex';
-                    bottomNav.style.visibility = 'visible';
-                }
-                if (mainContent) {
-                    mainContent.style.marginLeft = '0';
-                    mainContent.style.width = '100%';
-                }
-            } else {
-                // Desktop view - show sidebar, hide bottom nav
-                if (sidebar) {
-                    sidebar.style.display = 'flex';
-                    sidebar.style.visibility = 'visible';
-                    sidebar.style.width = '16rem';
-                    sidebar.style.position = 'fixed';
-                    sidebar.style.left = '0';
-                }
-                if (bottomNav) {
-                    bottomNav.style.display = 'none';
-                    bottomNav.style.visibility = 'hidden';
-                }
-                if (mainContent) {
-                    mainContent.style.marginLeft = '16rem';
-                }
-            }
-        }
-        
-        // Run immediately and on load and resize
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', checkScreenSize);
-        } else {
-            checkScreenSize();
-        }
-        window.addEventListener('resize', checkScreenSize);
-        window.addEventListener('load', checkScreenSize);
-
         // Mobile dropdown toggle with smart positioning
         document.getElementById('mobile-menu-button')?.addEventListener('click', function(e) {
             e.stopPropagation();

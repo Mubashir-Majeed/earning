@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Dashboard - VideoEarn')
+@section('title', 'Admin Dashboard - Earn Quest')
 @section('page-title', 'Admin Dashboard')
 
 @section('content')
@@ -10,7 +10,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-3xl font-bold mb-2">Welcome back, {{ auth()->user()->name }}!</h1>
-                <p class="text-blue-100">Here's what's happening with your VideoEarn platform today.</p>
+                <p class="text-blue-100">Here's what's happening with your Earn Quest platform today.</p>
             </div>
             <div class="hidden md:block">
                 <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center">

@@ -1,5 +1,5 @@
 <x-guest-layout>
-    @section('title', 'Join VideoEarn')
+    @section('title', 'Join Earn Quest')
     @section('subtitle', 'Create your account and start earning money today')
 
     <form method="POST" action="{{ route('register') }}" class="space-y-6">

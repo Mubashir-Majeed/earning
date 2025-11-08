@@ -5,8 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>VideoEarn - Earn Money Watching AI Animated Videos</title>
-        <meta name="description" content="Earn real money by watching AI animated videos. Make $100+ daily by completing video tasks. Join thousands of users earning from home.">
+        <title>Earn Quest - Earn Money Watching AI Animated Videos</title>
+        <meta name="description" content="Earn real money by watching AI animated videos. Choose packages from $35 to $100 and unlock daily tasks with fast BEP20 withdrawals.">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,7 +53,7 @@
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
                             <h1 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
-                                <i class="fab fa-youtube text-red-500 mr-1 sm:mr-2"></i>VideoEarn
+                                <i class="fab fa-youtube text-red-500 mr-1 sm:mr-2"></i>Earn Quest
                             </h1>
                         </div>
                     </div>
@@ -127,7 +127,7 @@
                                 <span class="text-white">Watching Videos</span>
                             </h1>
                             <p class="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed max-w-lg mx-auto lg:mx-0">
-                                Join thousands of users earning $100+ daily by watching AI animated videos. 
+                                Join thousands of users earning daily with Earn Quest video tasks.
                                 Simple, secure, and profitable!
                             </p>
                         </div>
@@ -152,7 +152,7 @@
 
                         <div class="grid grid-cols-3 gap-4 sm:gap-6 lg:gap-8 pt-6 sm:pt-8">
                             <div class="text-center">
-                                <div class="text-2xl sm:text-3xl font-bold text-yellow-400">$100+</div>
+                                <div class="text-2xl sm:text-3xl font-bold text-yellow-400">$35-$100</div>
                                 <div class="text-xs sm:text-sm text-gray-400 mt-1">Daily Earnings</div>
                             </div>
                             <div class="text-center">
@@ -227,7 +227,7 @@
                 <div class="text-center mb-10 sm:mb-12 lg:mb-16" data-aos="fade-up">
                     <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
                         <span class="bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
-                            Why Choose VideoEarn?
+                            Why Choose Earn Quest?
                         </span>
                     </h2>
                     <p class="text-base sm:text-lg lg:text-xl text-gray-300 max-w-3xl mx-auto px-4">
@@ -243,7 +243,7 @@
                         </div>
                         <h3 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">High Earnings</h3>
                         <p class="text-sm sm:text-base text-gray-300 leading-relaxed">
-                            Earn up to $100+ daily by watching AI animated videos. 
+                            Earn consistent rewards by watching AI animated videos with packages starting at $35. 
                             750 points equals $80 with instant payouts.
                         </p>
                     </div>
@@ -341,7 +341,7 @@
                         </div>
                         <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Make Deposit</h3>
                         <p class="text-sm sm:text-base text-gray-300 px-2">
-                            Make a one-time $100 deposit to unlock video tasks. 
+                            Make a one-time package deposit (starting at $35) to unlock video tasks. 
                             This is the only payment you'll ever need to make.
                         </p>
                     </div>
@@ -394,7 +394,7 @@
                         <div class="text-center mb-6 sm:mb-8 mt-4 sm:mt-0">
                             <h3 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Starter Package</h3>
                             <div class="text-4xl sm:text-5xl font-bold mb-2">
-                                <span class="bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">$100</span>
+                                <span class="bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">$24-$81</span>
                             </div>
                             <p class="text-sm sm:text-base text-gray-300">One-time payment</p>
                         </div>
@@ -561,7 +561,7 @@
                     <div class="sm:col-span-2">
                         <div class="flex items-center mb-3 sm:mb-4">
                             <h3 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
-                                <i class="fab fa-youtube text-red-500 mr-2"></i>VideoEarn
+                                <i class="fab fa-youtube text-red-500 mr-2"></i>Earn Quest
                             </h3>
                         </div>
                         <p class="text-sm sm:text-base text-gray-300 mb-3 sm:mb-4 max-w-md">
@@ -607,7 +607,7 @@
                 
                 <div class="border-t border-white/10 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center">
                     <p class="text-xs sm:text-sm text-gray-400">
-                        © 2024 VideoEarn. All rights reserved. | 
+                        © 2024 Earn Quest. All rights reserved. | 
                         <a href="#" class="hover:text-white transition-colors">Privacy Policy</a> | 
                         <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
                     </p>

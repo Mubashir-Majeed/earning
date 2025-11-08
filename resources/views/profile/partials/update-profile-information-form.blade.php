@@ -47,6 +47,20 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="bep20_address" :value="__('BEP20 Wallet Address')" />
+            @if($user->hasBoundWallet())
+                <div class="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                    <p class="text-sm text-gray-800 font-mono">{{ $user->bep20_address }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Wallet binding is locked. Contact support to request an update.</p>
+                </div>
+            @else
+                <x-text-input id="bep20_address" name="bep20_address" type="text" class="mt-1 block w-full font-mono" :value="old('bep20_address', $user->bep20_address)" placeholder="0x..." autocomplete="off" />
+                <x-input-error class="mt-2" :messages="$errors->get('bep20_address')" />
+                <p class="text-xs text-gray-500 mt-1">This address will be locked once saved.</p>
+            @endif
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

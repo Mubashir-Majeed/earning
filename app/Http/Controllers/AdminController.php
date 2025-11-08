@@ -8,6 +8,7 @@ use App\Models\Video;
 use App\Models\Withdrawal;
 use App\Models\Deposit;
 use App\Models\UserEarning;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -29,20 +30,31 @@ class AdminController extends Controller
     {
         $this->checkAdminRole();
         
+        $userQuery = User::withoutAdmins();
+
         $stats = [
-            'total_users' => User::count(),
-            'active_users' => User::where('is_active', true)->count(),
+            'total_users' => (clone $userQuery)->count(),
+            'active_users' => (clone $userQuery)->where('is_active', true)->count(),
             'total_videos' => Video::count(),
-            'pending_withdrawals' => Withdrawal::where('status', 'pending')->count(),
-            'total_earnings' => UserEarning::sum('dollar_value'),
-            'total_deposits' => Deposit::where('status', 'completed')->sum('amount'),
+            'pending_withdrawals' => Withdrawal::where('status', 'pending')
+                ->whereHas('user', fn ($q) => $q->withoutAdmins())
+                ->count(),
+            'total_earnings' => UserEarning::whereHas('user', fn ($q) => $q->withoutAdmins())->sum('dollar_value'),
+            'total_deposits' => Deposit::where('status', 'completed')
+                ->whereHas('user', fn ($q) => $q->withoutAdmins())
+                ->sum('amount'),
             'today_revenue' => Deposit::where('status', 'completed')
+                ->whereHas('user', fn ($q) => $q->withoutAdmins())
                 ->whereDate('created_at', now()->toDateString())
                 ->sum('amount'),
         ];
 
-        $recentUsers = User::latest()->limit(5)->get();
-        $recentWithdrawals = Withdrawal::with('user')->latest()->limit(5)->get();
+        $recentUsers = (clone $userQuery)->latest()->limit(5)->get();
+        $recentWithdrawals = Withdrawal::with('user')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
+            ->latest()
+            ->limit(5)
+            ->get();
 
         return view('admin.dashboard', compact('stats', 'recentUsers', 'recentWithdrawals'));
     }
@@ -51,19 +63,67 @@ class AdminController extends Controller
     {
         $this->checkAdminRole();
         
-        $users = User::with('roles')->paginate(20);
+        $users = User::withoutAdmins()
+            ->with('roles')
+            ->withSum([
+                'deposits as total_deposited_amount' => function ($query) {
+                    $query->where('status', 'completed');
+                },
+            ], 'amount')
+            ->withSum([
+                'withdrawals as total_withdrawn_amount' => function ($query) {
+                    $query->where('status', 'completed');
+                },
+            ], 'amount')
+            ->paginate(20);
         return view('admin.users', compact('users'));
     }
 
     public function showUser(User $user)
     {
         $this->checkAdminRole();
-        return view('admin.user-show', compact('user'));
+
+        if ($user->hasRole('admin')) {
+            abort(404);
+        }
+
+        $user->load([
+            'deposits' => function ($query) {
+                $query->orderByDesc('created_at');
+            },
+            'withdrawals' => function ($query) {
+                $query->orderByDesc('created_at');
+            },
+            'referrals' => function ($query) {
+                $query->where('has_deposited', true);
+            },
+        ]);
+
+        $packages = config('investment.packages', []);
+        $referralCounts = $user->referralCountsByPackage();
+        $referralProgress = $user->referralProgress();
+
+        $financials = [
+            'total_deposited' => $user->deposits->where('status', 'completed')->sum('amount'),
+            'total_withdrawn' => $user->withdrawals->where('status', 'completed')->sum('amount'),
+            'current_balance' => $user->balance,
+        ];
+
+        return view('admin.user-show', compact(
+            'user',
+            'packages',
+            'referralCounts',
+            'referralProgress',
+            'financials'
+        ));
     }
 
     public function toggleUserActive(User $user)
     {
         $this->checkAdminRole();
+        if ($user->hasRole('admin')) {
+            abort(403, 'Cannot modify admin account');
+        }
         $user->update(['is_active' => !$user->is_active]);
         return back()->with('success', 'User status updated.');
     }
@@ -71,6 +131,9 @@ class AdminController extends Controller
     public function destroyUser(User $user)
     {
         $this->checkAdminRole();
+        if ($user->hasRole('admin')) {
+            abort(403, 'Cannot delete admin account');
+        }
         $user->delete();
         return back()->with('success', 'User deleted successfully.');
     }
@@ -175,6 +238,7 @@ class AdminController extends Controller
         $this->checkAdminRole();
         
         $withdrawals = Withdrawal::with('user')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -186,10 +250,13 @@ class AdminController extends Controller
         $this->checkAdminRole();
 
         $deposits = Deposit::with('user')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('admin.deposits', compact('deposits'));
+        $packages = config('investment.packages', []);
+
+        return view('admin.deposits', compact('deposits', 'packages'));
     }
 
     public function completeDeposit(Request $request, Deposit $deposit)
@@ -214,6 +281,18 @@ class AdminController extends Controller
             if (!$deposit->user->has_deposited) {
                 $deposit->user->update(['has_deposited' => true]);
             }
+
+            $packageCode = $this->resolvePackageCode($deposit->package_code, $deposit->amount);
+
+            $deposit->user->update([
+                'initial_deposit_amount' => $deposit->amount,
+                'investment_package' => $packageCode,
+                'pending_deposit_amount' => null,
+                'pending_package_code' => null,
+                'unwithdrawable_balance_min' => $deposit->amount,
+                'bep20_address' => $deposit->user->bep20_address ?? $deposit->payment_details,
+                'wallet_bound_at' => $deposit->user->wallet_bound_at ?? now(),
+            ]);
 
             // Award referral bonus if user has a referrer and hasn't been awarded yet
             if ($deposit->user->referrer_id) {
@@ -260,9 +339,24 @@ class AdminController extends Controller
         $this->checkAdminRole();
 
         if ($deposit->status !== 'failed') {
-            $deposit->update([
-                'status' => 'failed',
-            ]);
+            DB::transaction(function () use ($deposit) {
+                $deposit->update([
+                    'status' => 'failed',
+                ]);
+
+                $user = $deposit->user;
+                if ($user) {
+                    $shouldClearPending = $user->pending_package_code === $deposit->package_code
+                        || (float) $user->pending_deposit_amount === (float) $deposit->amount;
+
+                    if ($shouldClearPending) {
+                        $user->update([
+                            'pending_deposit_amount' => null,
+                            'pending_package_code' => null,
+                        ]);
+                    }
+                }
+            });
         }
 
         return redirect()->route('admin.deposits')->with('success', 'Deposit marked as failed.');
@@ -303,21 +397,45 @@ class AdminController extends Controller
         return redirect()->route('admin.withdrawals')->with('success', 'Withdrawal marked as processing.');
     }
 
+    private function resolvePackageCode(?string $packageCode, float $amount): ?string
+    {
+        if ($packageCode) {
+            return $packageCode;
+        }
+
+        $packages = config('investment.packages', []);
+        foreach ($packages as $code => $package) {
+            if ((float) $package['deposit_amount'] === (float) $amount) {
+                return $code;
+            }
+        }
+
+        return null;
+    }
+
     public function analytics()
     {
         $this->checkAdminRole();
         
         // Get analytics data
-        $totalUsers = User::count();
-        $activeUsers = User::where('is_active', true)->count();
+        $userQuery = User::withoutAdmins();
+        $totalUsers = (clone $userQuery)->count();
+        $activeUsers = (clone $userQuery)->where('is_active', true)->count();
         $totalVideos = Video::count();
         $activeVideos = Video::where('is_active', true)->count();
-        $totalDeposits = Deposit::where('status', 'completed')->sum('amount');
-        $totalWithdrawals = Withdrawal::where('status', 'completed')->sum('amount');
-        $pendingWithdrawals = Withdrawal::where('status', 'pending')->sum('amount');
+        $totalDeposits = Deposit::where('status', 'completed')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
+            ->sum('amount');
+        $totalWithdrawals = Withdrawal::where('status', 'completed')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
+            ->sum('amount');
+        $pendingWithdrawals = Withdrawal::where('status', 'pending')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
+            ->sum('amount');
         
         // Monthly data for charts
-        $monthlyUsers = User::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
+        $monthlyUsers = User::withoutAdmins()
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
             ->where('created_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
@@ -325,6 +443,7 @@ class AdminController extends Controller
             
         $monthlyRevenue = Deposit::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(amount) as total')
             ->where('status', 'completed')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
             ->where('created_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
@@ -332,15 +451,40 @@ class AdminController extends Controller
             
         $monthlyWithdrawals = Withdrawal::selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, SUM(amount) as total')
             ->where('status', 'completed')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins())
             ->where('created_at', '>=', now()->subMonths(12))
             ->groupBy('month')
             ->orderBy('month')
             ->get();
 
+        $monthlyUsersChart = $monthlyUsers->map(function ($row) {
+            return [
+                'label' => Carbon::createFromFormat('Y-m', $row->month)->format('M Y'),
+                'value' => (int) $row->count,
+            ];
+        })->values();
+
+        $chartMonths = $monthlyRevenue->pluck('month')
+            ->merge($monthlyWithdrawals->pluck('month'))
+            ->unique()
+            ->sort()
+            ->values();
+
+        $monthlyRevenueChart = $chartMonths->map(function ($month) use ($monthlyRevenue, $monthlyWithdrawals) {
+            $revenue = optional($monthlyRevenue->firstWhere('month', $month))->total ?? 0;
+            $withdrawal = optional($monthlyWithdrawals->firstWhere('month', $month))->total ?? 0;
+
+            return [
+                'label' => Carbon::createFromFormat('Y-m', $month)->format('M Y'),
+                'revenue' => (float) $revenue,
+                'withdrawals' => (float) $withdrawal,
+            ];
+        });
+
         return view('admin.analytics', compact(
             'totalUsers', 'activeUsers', 'totalVideos', 'activeVideos',
             'totalDeposits', 'totalWithdrawals', 'pendingWithdrawals',
-            'monthlyUsers', 'monthlyRevenue', 'monthlyWithdrawals'
+            'monthlyUsersChart', 'monthlyRevenueChart'
         ));
     }
 
@@ -350,8 +494,8 @@ class AdminController extends Controller
         
         // Get current settings (you can create a settings table later)
         $settings = [
-            'site_name' => config('app.name', 'VideoEarn'),
-            'site_email' => config('mail.from.address', 'admin@videoearn.com'),
+            'site_name' => config('app.name', 'Earn Quest'),
+            'site_email' => config('mail.from.address', 'admin@earnquest.com'),
             'min_withdrawal' => 10,
             'withdrawal_fee_percent' => 5,
             'referral_bonus' => 5,

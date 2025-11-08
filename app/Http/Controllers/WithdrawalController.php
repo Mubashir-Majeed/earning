@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,13 +17,36 @@ class WithdrawalController extends Controller
 
     public function request(Request $request)
     {
+        $user = Auth::user();
+
         $request->validate([
             'amount' => 'required|numeric|min:10',
-            'withdrawal_method' => 'required|string|in:bank_transfer,paypal,crypto',
-            'withdrawal_details' => 'required|string',
         ]);
 
-        $user = Auth::user();
+        if (!$user->has_deposited || !$user->investment_package) {
+            return redirect()->route('withdrawal')->with('error', 'You must complete a package deposit before withdrawing.');
+        }
+
+        if (!$user->hasBoundWallet()) {
+            return redirect()->route('withdrawal')->with('error', 'Bind your BEP20 wallet address before requesting a withdrawal.');
+        }
+
+        $package = config('investment.packages.' . $user->investment_package);
+        if (!$package) {
+            return redirect()->route('withdrawal')->with('error', 'Unable to determine your package details. Please contact support.');
+        }
+
+        $minWithdrawal = 10;
+        if ($request->amount < $minWithdrawal) {
+            return redirect()->route('withdrawal')->with('error', 'Minimum withdrawal amount is $' . number_format($minWithdrawal, 2));
+        }
+
+        $availableProfit = $user->withdrawableProfit();
+        $maxWithdrawalForPackage = min($availableProfit, $package['withdrawal_cap']);
+
+        if ($request->amount > $maxWithdrawalForPackage) {
+            return redirect()->route('withdrawal')->with('error', 'Maximum withdrawal for your package is $' . number_format($maxWithdrawalForPackage, 2));
+        }
 
         // Enforce unwithdrawable minimum balance
         $unwithdrawableMin = $user->unwithdrawable_balance_min ?? 50;
@@ -58,8 +80,8 @@ class WithdrawalController extends Controller
                 'fee_amount' => $feeAmount,
                 'net_amount' => $netAmount,
                 'currency' => 'USD',
-                'withdrawal_method' => $request->withdrawal_method,
-                'withdrawal_details' => $request->withdrawal_details,
+                'withdrawal_method' => 'bep20',
+                'withdrawal_details' => $user->bep20_address,
                 'status' => 'pending',
                 'requested_at' => Carbon::now(),
             ]);

@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', 'Referrals - VideoEarn')
+@section('title', 'Referrals - Earn Quest')
 @section('page-title', 'Referrals')
 
 @php
@@ -49,6 +49,74 @@
                 <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                     <i class="fas fa-star text-purple-600 text-xl"></i>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    @php
+        $packageCatalog = $packages;
+        $progressCollection = collect($referralProgress);
+        $currentPackageName = data_get($packageCatalog, $user->investment_package.'.name', 'Package');
+    @endphp
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Referral Requirements</h3>
+                <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700">
+                    {{ $currentPackageName }} Plan
+                </span>
+            </div>
+
+            @if($progressCollection->isEmpty())
+                <p class="text-sm text-gray-500">Referral rules will appear after your deposit is approved.</p>
+            @else
+                <div class="space-y-3">
+                    @foreach($progressCollection as $rule)
+                        <div class="p-3 border border-gray-200 rounded-lg flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900">
+                                    {{ $rule['is_alternative'] ? 'Alternative Path' : 'Primary Requirement' }}
+                                </p>
+                                <p class="text-xs text-gray-500">{{ $rule['description'] }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-900">{{ $rule['current'] }} / {{ $rule['required'] }}</p>
+                                <p class="text-xs text-gray-500">{{ data_get($packageCatalog, $rule['package'].'.name', strtoupper($rule['package'])) }} referrals</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Referral Breakdown</h3>
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-green-600"></i>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-gray-500 uppercase text-xs">
+                            <th class="pb-2">Package</th>
+                            <th class="pb-2">Deposit</th>
+                            <th class="pb-2">Referrals</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-900 divide-y divide-gray-100">
+                        @foreach($packageCatalog as $code => $packageConfig)
+                            <tr>
+                                <td class="py-2 font-medium">{{ $packageConfig['name'] }}</td>
+                                <td class="py-2">${{ number_format($packageConfig['deposit_amount'], 2) }}</td>
+                                <td class="py-2">{{ $referralCounts[$code] ?? 0 }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

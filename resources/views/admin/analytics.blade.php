@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Analytics - VideoEarn')
+@section('title', 'Analytics - Earn Quest')
 @section('page-title', 'Analytics')
 
 @section('content')
@@ -162,14 +162,10 @@
 <script>
     // User Growth Chart
     const userCtx = document.getElementById('userGrowthChart').getContext('2d');
-    const monthlyUsers = @json($monthlyUsers);
-    
-    const userLabels = monthlyUsers.map(item => {
-        const date = new Date(item.month + '-01');
-        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    });
-    
-    const userData = monthlyUsers.map(item => item.count);
+    const monthlyUsers = @json($monthlyUsersChart);
+
+    const userLabels = monthlyUsers.length ? monthlyUsers.map(item => item.label) : ['No Data'];
+    const userData = monthlyUsers.length ? monthlyUsers.map(item => item.value) : [0];
     
     new Chart(userCtx, {
         type: 'line',
@@ -202,16 +198,11 @@
 
     // Revenue Chart
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    const monthlyRevenue = @json($monthlyRevenue);
-    const monthlyWithdrawals = @json($monthlyWithdrawals);
-    
-    const revenueLabels = monthlyRevenue.map(item => {
-        const date = new Date(item.month + '-01');
-        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    });
-    
-    const revenueData = monthlyRevenue.map(item => parseFloat(item.total));
-    const withdrawalData = monthlyWithdrawals.map(item => parseFloat(item.total));
+    const monthlyRevenue = @json($monthlyRevenueChart);
+
+    const revenueLabels = monthlyRevenue.length ? monthlyRevenue.map(item => item.label) : ['No Data'];
+    const revenueData = monthlyRevenue.length ? monthlyRevenue.map(item => item.revenue ?? 0) : [0];
+    const withdrawalData = monthlyRevenue.length ? monthlyRevenue.map(item => item.withdrawals ?? 0) : [0];
     
     new Chart(revenueCtx, {
         type: 'bar',

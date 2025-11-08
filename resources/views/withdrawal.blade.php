@@ -1,6 +1,6 @@
 @extends('layouts.user')
 
-@section('title', 'Request Withdrawal - VideoEarn')
+@section('title', 'Request Withdrawal - Earn Quest')
 @section('page-title', 'Request Withdrawal')
 
 @section('quick-videos', $stats['total_videos_watched'])
@@ -8,64 +8,102 @@
 @section('quick-points', number_format($stats['total_points']))
 
 @section('content')
+    @php
+        $packageCatalog = config('investment.packages');
+        $packageConfig = $package ?? ($user->investment_package ? ($packageCatalog[$user->investment_package] ?? null) : null);
+        $progressCollection = collect($referralProgress);
+        $primaryRule = $progressCollection->firstWhere('is_alternative', false);
+        $alternativeRules = $progressCollection->filter(fn ($rule) => $rule['is_alternative']);
+        $availableProfit = max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 0));
+        $withdrawalCap = $packageConfig['withdrawal_cap'] ?? $availableProfit;
+        $maxWithdrawable = min($availableProfit, $withdrawalCap);
+        $minWithdrawal = 10;
+    @endphp
+
     <div class="max-w-4xl mx-auto">
         <!-- Requirements Check -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
             <h3 class="text-xl font-bold text-gray-900 mb-4">Withdrawal Requirements</h3>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Balance Check -->
-                <div class="flex items-center p-4 rounded-lg {{ $stats['balance'] >= 10 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <!-- Withdrawable Profit -->
+                <div class="flex items-center p-4 rounded-lg {{ $availableProfit >= $minWithdrawal ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
                     <div class="flex-shrink-0">
-                        <i class="fas {{ $stats['balance'] >= 10 ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
+                        <i class="fas {{ $availableProfit >= $minWithdrawal ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <h4 class="text-sm font-medium {{ $stats['balance'] >= 10 ? 'text-green-800' : 'text-red-800' }}">Minimum Balance</h4>
-                        <p class="text-sm {{ $stats['balance'] >= 10 ? 'text-green-700' : 'text-red-700' }}">
-                            ${{ number_format($stats['balance'], 2) }} / $10.00 required
+                        <h4 class="text-sm font-medium {{ $availableProfit >= $minWithdrawal ? 'text-green-800' : 'text-red-800' }}">Withdrawable Profit</h4>
+                        <p class="text-sm {{ $availableProfit >= $minWithdrawal ? 'text-green-700' : 'text-red-700' }}">${{ number_format($availableProfit, 2) }} / ${{ number_format($minWithdrawal, 2) }} required</p>
+                    </div>
+                </div>
+
+                <!-- Referral Requirement -->
+                <div class="flex items-center p-4 rounded-lg {{ $user->meetsReferralRequirementForWithdrawal() ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200' }}">
+                    <div class="flex-shrink-0">
+                        <i class="fas {{ $user->meetsReferralRequirementForWithdrawal() ? 'fa-check-circle text-green-500' : 'fa-users text-yellow-500' }} text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-medium {{ $user->meetsReferralRequirementForWithdrawal() ? 'text-green-800' : 'text-yellow-800' }}">Referral Requirement</h4>
+                        <p class="text-sm {{ $user->meetsReferralRequirementForWithdrawal() ? 'text-green-700' : 'text-yellow-700' }}">
+                            @if($primaryRule)
+                                {{ $primaryRule['current'] }} / {{ $primaryRule['required'] }} {{ data_get($packageCatalog, $primaryRule['package'].'.name', strtoupper($primaryRule['package'])) }} referrals
+                            @else
+                                Awaiting package confirmation
+                            @endif
                         </p>
                     </div>
                 </div>
 
-                <!-- Referral Check -->
-                <div class="flex items-center p-4 rounded-lg {{ $user->meetsReferralRequirementForWithdrawal() ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
+                <!-- Channel Subscription -->
+                <div class="flex items-center p-4 rounded-lg {{ $user->hasSubscribedChannel() ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200' }}">
                     <div class="flex-shrink-0">
-                        <i class="fas {{ $user->meetsReferralRequirementForWithdrawal() ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
+                        <i class="fas {{ $user->hasSubscribedChannel() ? 'fa-check-circle text-green-500' : 'fa-play text-yellow-500' }} text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <h4 class="text-sm font-medium {{ $user->meetsReferralRequirementForWithdrawal() ? 'text-green-800' : 'text-red-800' }}">Referral Requirement</h4>
-                        <p class="text-sm {{ $user->meetsReferralRequirementForWithdrawal() ? 'text-green-700' : 'text-red-700' }}">
-                            {{ $user->referrals_count }} / {{ $user->requiredReferralsForWithdrawal() }} referrals
-                        </p>
+                        <h4 class="text-sm font-medium {{ $user->hasSubscribedChannel() ? 'text-green-800' : 'text-yellow-800' }}">Channel Subscription</h4>
+                        <p class="text-sm {{ $user->hasSubscribedChannel() ? 'text-green-700' : 'text-yellow-700' }}">{{ $user->hasSubscribedChannel() ? 'Confirmed' : 'Confirm via Task Center' }}</p>
                     </div>
                 </div>
 
-                <!-- Monthly Quota Check -->
-                <div class="flex items-center p-4 rounded-lg {{ $user->withinMonthlyWithdrawalQuota() ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
+                <!-- Wallet Binding -->
+                <div class="flex items-center p-4 rounded-lg {{ $user->hasBoundWallet() ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
                     <div class="flex-shrink-0">
-                        <i class="fas {{ $user->withinMonthlyWithdrawalQuota() ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
+                        <i class="fas {{ $user->hasBoundWallet() ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <h4 class="text-sm font-medium {{ $user->withinMonthlyWithdrawalQuota() ? 'text-green-800' : 'text-red-800' }}">Monthly Quota</h4>
-                        <p class="text-sm {{ $user->withinMonthlyWithdrawalQuota() ? 'text-green-700' : 'text-red-700' }}">
-                            {{ $user->monthly_withdrawals_count }} / {{ $user->withdrawalMonthlyLimit() }} withdrawals
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Deposit Check -->
-                <div class="flex items-center p-4 rounded-lg {{ $user->has_deposited ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
-                    <div class="flex-shrink-0">
-                        <i class="fas {{ $user->has_deposited ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h4 class="text-sm font-medium {{ $user->has_deposited ? 'text-green-800' : 'text-red-800' }}">Initial Deposit</h4>
-                        <p class="text-sm {{ $user->has_deposited ? 'text-green-700' : 'text-red-700' }}">
-                            {{ $user->has_deposited ? 'Completed' : 'Required' }}
-                        </p>
+                        <h4 class="text-sm font-medium {{ $user->hasBoundWallet() ? 'text-green-800' : 'text-red-800' }}">BEP20 Wallet Binding</h4>
+                        <p class="text-sm {{ $user->hasBoundWallet() ? 'text-green-700' : 'text-red-700' }}">{{ $user->hasBoundWallet() ? \Illuminate\Support\Str::limit($user->bep20_address, 18, '...') : 'Bind wallet in profile' }}</p>
                     </div>
                 </div>
             </div>
+
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                    <p class="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Package Snapshot</p>
+                    <p class="text-sm text-blue-700">
+                        @if($packageConfig)
+                            {{ $packageConfig['name'] }} package • Deposit ${{ number_format($packageConfig['deposit_amount'], 2) }} • Withdrawal cap ${{ number_format($packageConfig['withdrawal_cap'], 2) }}
+                        @else
+                            Package will be assigned once your deposit is approved.
+                        @endif
+                    </p>
+                </div>
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Monthly Withdrawal Quota</p>
+                    <p class="text-sm text-gray-600">{{ $user->monthly_withdrawals_count }} of {{ $user->withdrawalMonthlyLimit() }} withdrawals used this month.</p>
+                </div>
+            </div>
+
+            @if($alternativeRules->isNotEmpty())
+                <div class="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
+                    <p class="font-semibold mb-1">Alternative referral paths available:</p>
+                    <ul class="space-y-1">
+                        @foreach($alternativeRules as $rule)
+                            <li>• {{ $rule['current'] }} / {{ $rule['required'] }} {{ data_get($packageCatalog, $rule['package'].'.name', strtoupper($rule['package'])) }} referrals — {{ $rule['description'] }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             @if(!$user->canWithdraw())
                 <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -100,13 +138,14 @@
                             <i class="fas fa-wallet text-blue-600 text-xl"></i>
                         </div>
                         <div>
-                            <h4 class="text-sm font-medium text-blue-800">Available Balance</h4>
+                            <h4 class="text-sm font-medium text-blue-800">Account Balance</h4>
                             <p class="text-3xl font-bold text-blue-900">${{ number_format($stats['balance'], 2) }}</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-gray-600">Withdrawable Amount</p>
-                        <p class="text-lg font-semibold text-green-600">${{ number_format(max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 50)), 2) }}</p>
+                        <p class="text-sm text-gray-600">Max withdraw this request</p>
+                        <p class="text-lg font-semibold text-green-600">${{ number_format($maxWithdrawable, 2) }}</p>
+                        <p class="text-xs text-gray-500">Cap enforced: ${{ number_format($withdrawalCap, 2) }}</p>
                     </div>
                 </div>
             </div>
@@ -128,41 +167,25 @@
                                    name="amount" 
                                    id="amount" 
                                    step="0.01" 
-                                   min="10" 
-                                   max="{{ max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 50)) }}"
-                                   value="{{ min(10, max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 50))) }}"
+                                   min="{{ $maxWithdrawable >= $minWithdrawal ? $minWithdrawal : max(0, $maxWithdrawable) }}" 
+                                   max="{{ max(0, $maxWithdrawable) }}"
+                                   value="{{ $maxWithdrawable >= $minWithdrawal ? $minWithdrawal : max(0, $maxWithdrawable) }}"
                                    class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
                         </div>
                         <p class="mt-2 text-sm text-gray-500">
-                            Minimum: $10.00 | Maximum: ${{ number_format(max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 50)), 2) }}
+                            Minimum: ${{ number_format($minWithdrawal, 2) }} | Maximum: ${{ number_format($maxWithdrawable, 2) }} (package cap & retained deposit apply)
                         </p>
                     </div>
 
-                    <!-- Withdrawal Method -->
-                    <div>
-                        <label for="withdrawal_method" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-credit-card mr-2 text-blue-500"></i>Withdrawal Method
-                        </label>
-                        <select name="withdrawal_method" id="withdrawal_method" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                            <option value="bank_transfer">🏦 Bank Transfer</option>
-                            <option value="paypal">💳 PayPal</option>
-                            <option value="crypto">₿ Cryptocurrency</option>
-                            <option value="western_union">🌍 Western Union</option>
-                        </select>
-                    </div>
-
-                    <!-- Withdrawal Details -->
-                    <div>
-                        <label for="withdrawal_details" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>Payment Details
-                        </label>
-                        <textarea name="withdrawal_details" 
-                                  id="withdrawal_details" 
-                                  rows="4" 
-                                  placeholder="Please provide your payment details (account number, email, wallet address, etc.)"
-                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"></textarea>
-                        <p class="mt-2 text-sm text-gray-500">
-                            <i class="fas fa-lightbulb mr-1"></i>Provide the necessary details for your chosen withdrawal method.
+                    <!-- Withdrawal Wallet Details -->
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-link text-blue-500 mr-2"></i>
+                            <h4 class="text-sm font-semibold text-gray-900">Withdrawal Wallet (BEP20)</h4>
+                        </div>
+                        <p class="text-sm text-gray-700 font-mono break-all">{{ $user->bep20_address }}</p>
+                        <p class="mt-2 text-xs text-gray-500">
+                            Withdrawals are only processed to this bound BEP20 wallet. Update it from your profile before submitting a request.
                         </p>
                     </div>
 
@@ -232,13 +255,21 @@
                                 </div>
                                 <div class="flex items-center">
                                     <i class="fas fa-dollar-sign mr-2"></i>
-                                    <span>Minimum withdrawal amount is $10.00</span>
+                                    <span>Minimum withdrawal amount is ${{ number_format($minWithdrawal, 2) }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-lock mr-2"></i>
+                                    <span>Initial deposit of ${{ number_format($user->unwithdrawable_balance_min ?? 0, 2) }} remains locked.</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-chart-line mr-2"></i>
+                                    <span>Per-request cap: ${{ number_format($withdrawalCap, 2) }}</span>
                                 </div>
                             </div>
                             <div class="space-y-2">
                                 <div class="flex items-center">
                                     <i class="fas fa-check-circle mr-2"></i>
-                                    <span>Ensure payment details are correct</span>
+                                    <span>Ensure your bound BEP20 wallet is correct</span>
                                 </div>
                                 <div class="flex items-center">
                                     <i class="fas fa-headset mr-2"></i>
@@ -246,7 +277,7 @@
                                 </div>
                                 <div class="flex items-center">
                                     <i class="fas fa-shield-alt mr-2"></i>
-                                    <span>Secure and encrypted transactions</span>
+                                    <span>Secure BEP20 transactions only</span>
                                 </div>
                             </div>
                         </div>
@@ -297,11 +328,11 @@
         // Form validation
         document.getElementById('withdrawal-form').addEventListener('submit', function(e) {
             const amount = parseFloat(amountInput.value);
-            const maxAmount = {{ max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 50)) }};
+            const maxAmount = {{ max(0, $maxWithdrawable) }};
             
-            if (amount < 10) {
+            if (amount < {{ $minWithdrawal }}) {
                 e.preventDefault();
-                alert('Minimum withdrawal amount is $10.00');
+                alert('Minimum withdrawal amount is ${{ number_format($minWithdrawal, 2) }}');
                 return;
             }
             
@@ -311,12 +342,6 @@
                 return;
             }
             
-            const details = document.getElementById('withdrawal_details').value.trim();
-            if (!details) {
-                e.preventDefault();
-                alert('Please provide your payment details');
-                return;
-            }
         });
     }
 </script>

@@ -13,6 +13,8 @@ class Deposit extends Model
         'user_id',
         'amount',
         'currency',
+        'package_code',
+        'expected_withdrawal_cap',
         'payment_method',
         'payment_id',
         'status',
@@ -24,6 +26,7 @@ class Deposit extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'expected_withdrawal_cap' => 'decimal:2',
             'completed_at' => 'datetime',
         ];
     }

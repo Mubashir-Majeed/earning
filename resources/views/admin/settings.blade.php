@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Settings - VideoEarn')
+@section('title', 'Settings - Earn Quest')
 @section('page-title', 'Settings')
 
 @section('content')

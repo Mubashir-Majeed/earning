@@ -1,9 +1,13 @@
 @extends('layouts.admin')
 
-@section('title', 'Users Management - VideoEarn')
+@section('title', 'Users Management - Earn Quest')
 @section('page-title', 'Users Management')
 
 @section('content')
+@php
+    $packageCatalog = config('investment.packages');
+@endphp
+
 <div class="space-y-6">
     <!-- Header Actions -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
@@ -68,6 +72,15 @@
                             Balance
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Package
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Deposit Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Withdrawn
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Points
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -103,6 +116,15 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">${{ number_format($user->balance, 2) }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ $packageCatalog[$user->investment_package]['name'] ?? '—' }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">${{ number_format($user->total_deposited_amount ?? 0, 2) }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">${{ number_format($user->total_withdrawn_amount ?? 0, 2) }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ number_format($user->points) }}</div>
@@ -149,7 +171,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center">
+                            <td colspan="11" class="px-6 py-12 text-center">
                                 <div class="text-gray-500">
                                     <i class="fas fa-users text-4xl mb-4"></i>
                                     <p class="text-lg">No users found</p>

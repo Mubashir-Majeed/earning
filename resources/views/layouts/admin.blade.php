@@ -8,8 +8,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
-    <title>@yield('title', 'Admin Panel - VideoEarn')</title>
-    <meta name="description" content="VideoEarn Admin Panel - Manage users, videos, and earnings">
+    <title>@yield('title', 'Admin Panel - Earn Quest')</title>
+    <meta name="description" content="Earn Quest Admin Panel - Manage users, videos, and earnings">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,7 +89,7 @@
                 display: flex !important;
                 visibility: visible !important;
                 opacity: 1 !important;
-                width: 16rem !important;
+                width: 18rem !important;
                 height: auto !important;
                 position: fixed !important;
                 left: 0 !important;
@@ -101,7 +101,7 @@
                 visibility: hidden !important;
             }
             body .main-content-wrapper {
-                margin-left: 16rem !important;
+                margin-left: 18rem !important;
                 padding-bottom: 0 !important;
             }
         }
@@ -118,94 +118,250 @@
         .safe-area-bottom {
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
+
+        body {
+            background: linear-gradient(125deg, #eef2ff 0%, #f8fafc 38%, #e0e7ff 100%);
+        }
+
+        .main-content-wrapper {
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .sidebar-container {
+            position: relative;
+            height: 100%;
+            background: radial-gradient(circle at top left, rgba(255,255,255,0.12), transparent 55%),
+                        linear-gradient(185deg, #0f172a 0%, #111827 55%, #020617 100%);
+            color: #e2e8f0;
+            border-right: 1px solid rgba(148,163,184,0.18);
+            box-shadow: 12px 0 32px -28px rgba(15,23,42,0.85);
+        }
+
+        .sidebar-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(140deg, rgba(59,130,246,0.22), rgba(129,140,248,0.18));
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .sidebar-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(79,70,229,0.22));
+            border-bottom: 1px solid rgba(148,163,184,0.12);
+        }
+
+        .sidebar-nav {
+            max-height: calc(100vh - 240px);
+            overflow-y: auto;
+            padding-bottom: 2rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148,163,184,0.35) transparent;
+        }
+
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(148,163,184,0.35);
+            border-radius: 999px;
+        }
+
+        .sidebar-title {
+            letter-spacing: 0.28em;
+            font-weight: 600;
+            color: rgba(226,232,240,0.55);
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.85rem 1.05rem;
+            border-radius: 1rem;
+            font-weight: 500;
+            color: rgba(226,232,240,0.8);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .sidebar-link:hover {
+            background: linear-gradient(110deg, rgba(59,130,246,0.22), rgba(129,140,248,0.22));
+            color: #ffffff;
+            transform: translateX(3px);
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(109,40,217,0.32));
+            color: #ffffff;
+            box-shadow: 0 18px 36px -24px rgba(59,130,246,0.85);
+        }
+
+        .sidebar-link .sidebar-icon {
+            width: 2.35rem;
+            height: 2.35rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(148,163,184,0.25);
+            color: inherit;
+            transition: all 0.25s ease;
+        }
+
+        .sidebar-link.active .sidebar-icon {
+            background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(129,140,248,0.95));
+            color: #ffffff;
+            box-shadow: 0 14px 28px -16px rgba(79,70,229,0.75);
+        }
+
+        .sidebar-link:hover .sidebar-icon {
+            background: linear-gradient(135deg, rgba(59,130,246,0.6), rgba(129,140,248,0.6));
+            color: #ffffff;
+        }
+
+        .sidebar-link::after {
+            content: '';
+            position: absolute;
+            right: 0.55rem;
+            top: 50%;
+            width: 0.35rem;
+            height: 0.35rem;
+            background: rgba(148,163,184,0.35);
+            border-radius: 9999px;
+            transform: translateY(-50%);
+            transition: background 0.25s ease;
+        }
+
+        .sidebar-link.active::after {
+            background: #60a5fa;
+        }
+
+        .sidebar-user-card {
+            background: rgba(255,255,255,0.92);
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 16px 40px -28px rgba(15,23,42,0.7);
+            border: 1px solid rgba(148,163,184,0.14);
+        }
     </style>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-inter bg-gray-50 text-gray-900 antialiased">
+<body class="font-inter text-gray-900 antialiased">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out" id="sidebar">
-        <!-- Logo -->
-        <div class="flex items-center justify-center h-16 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                    <i class="fas fa-shield-alt text-blue-600 text-lg"></i>
+    <div class="fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-in-out" id="sidebar" style="top: 0;">
+        <div class="sidebar-container h-full flex flex-col">
+            <!-- Logo -->
+            <div class="flex items-center justify-between h-20 px-6 sidebar-header">
+                <div class="flex items-center space-x-4">
+                    <div class="w-11 h-11 bg-white/15 rounded-2xl flex items-center justify-center shadow-inner border border-white/20">
+                        <i class="fas fa-shield-heart text-white text-lg"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <span class="block text-white font-semibold text-lg tracking-[0.28em] uppercase">Earn Quest</span>
+                    </div>
                 </div>
-                <span class="text-white font-bold text-lg">Admin Panel</span>
+                <span class="hidden lg:inline-flex items-center px-3 py-1 text-[10px] font-semibold text-white/80 bg-white/10 rounded-full backdrop-blur-sm border border-white/20">Secure Session</span>
             </div>
-        </div>
 
-        <!-- Navigation -->
-        <nav class="mt-8">
-            <div class="px-4 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.dashboard') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-tachometer-alt mr-3"></i>
-                    Dashboard
-                </a>
-                
-                <a href="{{ route('admin.users') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.users') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-users mr-3"></i>
-                    Users Management
-                </a>
-                
-                <a href="{{ route('admin.videos') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.videos') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-video mr-3"></i>
-                    Videos Management
-                </a>
-                
-                <a href="{{ route('admin.deposits') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.deposits') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-credit-card mr-3"></i>
-                    Deposits
-                </a>
-                
-                <a href="{{ route('admin.withdrawals') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.withdrawals') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-money-bill-wave mr-3"></i>
-                    Withdrawals
-                </a>
-                
-                <a href="{{ route('admin.analytics') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.analytics') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-chart-bar mr-3"></i>
-                    Analytics
-                </a>
-                
-                <a href="{{ route('admin.settings') }}" 
-                   class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors {{ request()->routeIs('admin.settings') ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' : '' }}">
-                    <i class="fas fa-cog mr-3"></i>
-                    Settings
-                </a>
-            </div>
-        </nav>
+            @php
+                $sidebarLinks = [
+                    [
+                        'label' => 'Dashboard',
+                        'icon' => 'fa-gauge-high',
+                        'route' => 'admin.dashboard',
+                        'active' => ['admin.dashboard'],
+                    ],
+                    [
+                        'label' => 'Users Management',
+                        'icon' => 'fa-users',
+                        'route' => 'admin.users',
+                        'active' => ['admin.users', 'admin.users.*'],
+                    ],
+                    [
+                        'label' => 'Videos Management',
+                        'icon' => 'fa-video',
+                        'route' => 'admin.videos',
+                        'active' => ['admin.videos', 'admin.videos.*'],
+                    ],
+                    [
+                        'label' => 'Deposits',
+                        'icon' => 'fa-coins',
+                        'route' => 'admin.deposits',
+                        'active' => ['admin.deposits', 'admin.deposits.*'],
+                    ],
+                    [
+                        'label' => 'Withdrawals',
+                        'icon' => 'fa-money-bill-transfer',
+                        'route' => 'admin.withdrawals',
+                        'active' => ['admin.withdrawals', 'admin.withdrawals.*'],
+                    ],
+                    [
+                        'label' => 'Analytics',
+                        'icon' => 'fa-chart-line',
+                        'route' => 'admin.analytics',
+                        'active' => ['admin.analytics'],
+                    ],
+                    [
+                        'label' => 'Settings',
+                        'icon' => 'fa-gear',
+                        'route' => 'admin.settings',
+                        'active' => ['admin.settings'],
+                    ],
+                ];
+            @endphp
 
-        <!-- User Info -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gray-50 border-t">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                    <i class="fas fa-user text-white"></i>
+            <nav class="mt-4 px-5 sidebar-nav">
+                <p class="text-xs text-white/40 uppercase sidebar-title mb-4">Navigation</p>
+
+                @foreach($sidebarLinks as $link)
+                    @php
+                        $isActive = request()->routeIs($link['active']);
+                    @endphp
+                    <a href="{{ route($link['route']) }}" class="sidebar-link {{ $isActive ? 'active' : '' }}">
+                        <span class="sidebar-icon">
+                            <i class="fas {{ $link['icon'] }}"></i>
+                        </span>
+                        <span>{{ $link['label'] }}</span>
+                    </a>
+                @endforeach
+            </nav>
+
+            <!-- User Info -->
+            <div class="px-5 pb-6 mt-auto">
+                <div class="sidebar-user-card">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-slate-500">Administrator</p>
+                        </div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="text-slate-400 hover:text-red-500 transition" title="Logout">
+                                <i class="fas fa-arrow-right-from-bracket"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
-                    <p class="text-xs text-gray-500">Administrator</p>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="text-gray-400 hover:text-red-600 transition-colors">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </form>
             </div>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="main-content-wrapper ml-64">
+    <div class="main-content-wrapper ml-72" style="padding-top: 1.5rem;">
         <!-- Top Bar -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
+        <header class="bg-white/80 backdrop-blur-md border-b border-white/60 shadow-lg">
             <div class="flex items-center justify-between px-6 py-4">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-2xl font-bold text-gray-900">@yield('page-title', 'Dashboard')</h1>
@@ -396,7 +552,7 @@
                     bottomNav.style.visibility = 'hidden';
                 }
                 if (mainContent) {
-                    mainContent.style.marginLeft = '16rem';
+                    mainContent.style.marginLeft = '18rem';
                     mainContent.style.paddingBottom = '0';
                 }
             }
