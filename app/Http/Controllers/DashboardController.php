@@ -56,15 +56,57 @@ class DashboardController extends Controller
         ));
     }
 
-    public function deposit()
+    public function deposit(Request $request)
     {
         $user = auth()->user();
         
-        if ($user->has_deposited) {
-            return redirect()->route('dashboard')->with('info', 'You have already made your initial deposit.');
+        $latestDeposit = $user->deposits()->latest()->with('user')->first();
+        $packages = config('investment.packages', []);
+
+        if ($latestDeposit) {
+            if ($latestDeposit->status === 'pending') {
+                return view('deposit-pending', [
+                    'user' => $user,
+                    'packages' => $packages,
+                    'pendingDeposit' => $latestDeposit,
+                ]);
+            }
+
+            if ($latestDeposit->status === 'failed' && $request->boolean('retry')) {
+                if (!$user->hasBoundWallet()) {
+                    return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit.');
+                }
+
+                return view('deposit', compact('user', 'packages'));
+            }
+
+            if ($latestDeposit->status === 'failed' && !$request->boolean('retry')) {
+                return view('deposit-status', [
+                    'user' => $user,
+                    'packages' => $packages,
+                    'depositRecord' => $latestDeposit,
+                ]);
+            }
+
+            if ($request->boolean('new')) {
+                if (!$user->hasBoundWallet()) {
+                    return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit.');
+                }
+
+                return view('deposit', compact('user', 'packages'));
+            }
+
+            return view('deposit-status', [
+                'user' => $user,
+                'packages' => $packages,
+                'depositRecord' => $latestDeposit,
+            ]);
         }
 
-        $packages = config('investment.packages', []);
+        if (!$user->hasBoundWallet()) {
+            return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit.');
+        }
+
         return view('deposit', compact('user', 'packages'));
     }
 
@@ -74,7 +116,8 @@ class DashboardController extends Controller
         $stats = $this->videoEarningService->getUserStats($user);
         $package = $user->investment_package ? config('investment.packages.' . $user->investment_package) : null;
         $referralProgress = $user->referralProgress();
-        return view('withdrawal', compact('user', 'stats', 'package', 'referralProgress'));
+        $minWithdrawal = config('platform.min_withdrawal', 10);
+        return view('withdrawal', compact('user', 'stats', 'package', 'referralProgress', 'minWithdrawal'));
     }
 
     public function earnings()

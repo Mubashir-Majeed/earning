@@ -5,6 +5,8 @@
 
 @section('content')
 @php
+    use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Str;
     $packageCatalog = $packages ?? config('investment.packages');
 @endphp
 
@@ -67,6 +69,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -98,6 +101,27 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ strtoupper($deposit->payment_method) }}</span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                @php
+                                    $reference = $deposit->payment_id;
+                                    if (!$reference && $deposit->notes) {
+                                        $reference = Str::after($deposit->notes, 'TX Reference: ');
+                                        $reference = trim($reference);
+                                    }
+                                    $reference = $reference ?: null;
+                                    $receiptUrl = $deposit->receipt_path
+                                        ? asset('storage/' . ltrim($deposit->receipt_path, '/'))
+                                        : null;
+                                @endphp
+                                <div class="flex flex-col space-y-1">
+                                    <span class="font-mono text-gray-800">{{ $reference ?? '—' }}</span>
+                                    @if($receiptUrl)
+                                        <a href="{{ $receiptUrl }}" target="_blank" class="inline-flex items-center text-xs text-blue-600 hover:text-blue-700">
+                                            <i class="fas fa-file-image mr-1"></i>View receipt
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($deposit->status === 'completed')
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Completed</span>
@@ -115,9 +139,10 @@
                                             @csrf
                                             <button class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Mark Completed</button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.deposits.fail', $deposit) }}">
+                                        <form method="POST" action="{{ route('admin.deposits.fail', $deposit) }}" data-fail-form id="fail-form-{{ $deposit->id }}">
                                             @csrf
-                                            <button class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">Mark Failed</button>
+                                            <input type="hidden" name="failure_reason">
+                                            <button type="button" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700" data-fail-trigger data-form="fail-form-{{ $deposit->id }}">Mark Failed</button>
                                         </form>
                                     @else
                                         <span class="text-gray-400">—</span>
@@ -125,9 +150,16 @@
                                 </div>
                             </td>
                         </tr>
+                        @if($deposit->status === 'failed' && $deposit->notes)
+                            <tr class="bg-red-50">
+                                <td colspan="9" class="px-6 py-3 text-sm text-red-700">
+                                    <i class="fas fa-exclamation-circle mr-2"></i><span class="font-semibold">Rejection Reason:</span> {{ $deposit->notes }}
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center">
+                            <td colspan="9" class="px-6 py-12 text-center">
                                 <div class="text-gray-500">
                                     <i class="fas fa-credit-card text-4xl mb-4"></i>
                                     <p class="text-lg">No deposits found</p>
@@ -198,6 +230,97 @@
         </div>
     </div>
 </div>
+
+<!-- Reject Reason Modal -->
+<div id="rejectModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Reject Deposit</h3>
+                    <p class="text-sm text-slate-500">Share the reason for rejection. The member will see this message on their dashboard.</p>
+                </div>
+                <button type="button" class="text-slate-400 hover:text-slate-600" data-reject-close>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div>
+                <label for="rejectReasonInput" class="block text-sm font-medium text-slate-700 mb-2">Rejection Reason</label>
+                <textarea id="rejectReasonInput" rows="4" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Example: Payment proof does not match the transfer amount."></textarea>
+                <p class="text-xs text-slate-500 mt-2">Provide clear guidance so the member can re-submit accurately.</p>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300" data-reject-close>Cancel</button>
+                <button type="button" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" data-reject-submit>Reject Deposit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const triggers = document.querySelectorAll('[data-fail-trigger]');
+        if (!triggers.length) {
+            return;
+        }
+
+        const modal = document.getElementById('rejectModal');
+        const reasonInput = document.getElementById('rejectReasonInput');
+        const closeButtons = modal.querySelectorAll('[data-reject-close]');
+        const submitButton = modal.querySelector('[data-reject-submit]');
+        let activeForm = null;
+
+        function openModal(form) {
+            activeForm = form;
+            reasonInput.value = '';
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            activeForm = null;
+        }
+
+        triggers.forEach(button => {
+            button.addEventListener('click', () => {
+                const formId = button.getAttribute('data-form');
+                if (!formId) {
+                    return;
+                }
+                const form = document.getElementById(formId);
+                if (!form) {
+                    return;
+                }
+                openModal(form);
+            });
+        });
+
+        closeButtons.forEach(btn => btn.addEventListener('click', closeModal));
+
+        submitButton.addEventListener('click', () => {
+            if (!activeForm) {
+                return;
+            }
+            const reason = reasonInput.value.trim();
+            if (!reason) {
+                alert('Please enter a rejection reason.');
+                return;
+            }
+
+            activeForm.querySelector('input[name="failure_reason"]').value = reason;
+            closeModal();
+            activeForm.submit();
+        });
+
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    });
+</script>
 @endsection
-
-
+@endsection
+ 
+ 

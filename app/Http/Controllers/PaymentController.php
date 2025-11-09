@@ -23,26 +23,42 @@ class PaymentController extends Controller
             return redirect()->route('dashboard')->with('error', 'You have already made your initial deposit.');
         }
 
+        if (!$user->hasBoundWallet()) {
+            return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit request.');
+        }
+
         $packages = config('investment.packages', []);
         $packageCodes = array_keys($packages);
 
         $validated = $request->validate([
             'package_code' => ['required', Rule::in($packageCodes)],
             'wallet_address' => ['required', 'string', 'regex:/^0x[a-fA-F0-9]{40}$/'],
-            'transaction_reference' => ['nullable', 'string', 'max:255'],
+            'transaction_reference' => ['required', 'string', 'max:255'],
+            'transaction_receipt' => ['required', 'file', 'image', 'max:5120'],
         ]);
 
         $selectedPackage = $packages[$validated['package_code']];
 
-        $walletAddress = strtolower($validated['wallet_address']);
+        if ($user->hasBoundWallet()) {
+            $walletAddress = strtolower($user->bep20_address);
+        }
 
-        if ($user->hasBoundWallet() && strcasecmp($user->bep20_address, $walletAddress) !== 0) {
+        if ($user->hasBoundWallet() && strcasecmp($user->bep20_address, $validated['wallet_address']) !== 0) {
             return back()
                 ->withErrors(['wallet_address' => 'You have already bound a different BEP20 wallet address. Please contact support to update it.'])
                 ->withInput();
         }
 
-        DB::transaction(function () use ($user, $validated, $selectedPackage, $walletAddress) {
+        if ($user->deposits()->where('status', 'pending')->exists()) {
+            return redirect()->route('deposit')->with('info', 'Your previous deposit request is still under review.');
+        }
+
+        $receiptPath = null;
+        if ($request->hasFile('transaction_receipt')) {
+            $receiptPath = $request->file('transaction_receipt')->store('deposit-receipts', 'public');
+        }
+
+        DB::transaction(function () use ($user, $validated, $selectedPackage, $walletAddress, $receiptPath) {
             Deposit::create([
                 'user_id' => $user->id,
                 'amount' => $selectedPackage['deposit_amount'],
@@ -50,11 +66,11 @@ class PaymentController extends Controller
                 'currency' => 'USD',
                 'package_code' => $validated['package_code'],
                 'payment_method' => 'bep20',
+                'payment_id' => $validated['transaction_reference'],
                 'payment_details' => $walletAddress,
                 'status' => 'pending',
-                'notes' => $validated['transaction_reference']
-                    ? 'TX Reference: ' . $validated['transaction_reference']
-                    : 'Initial deposit request submitted',
+                'notes' => null,
+                'receipt_path' => $receiptPath,
             ]);
 
             $user->update([

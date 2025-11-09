@@ -31,7 +31,7 @@ class AdminController extends Controller
         $this->checkAdminRole();
         
         $userQuery = User::withoutAdmins();
-
+        
         $stats = [
             'total_users' => (clone $userQuery)->count(),
             'active_users' => (clone $userQuery)->where('is_active', true)->count(),
@@ -95,7 +95,15 @@ class AdminController extends Controller
                 $query->orderByDesc('created_at');
             },
             'referrals' => function ($query) {
-                $query->where('has_deposited', true);
+                $query->where('has_deposited', true)
+                    ->with([
+                        'deposits' => function ($q) {
+                            $q->where('status', 'completed');
+                        },
+                        'withdrawals' => function ($q) {
+                            $q->where('status', 'completed');
+                        },
+                    ]);
             },
         ]);
 
@@ -109,12 +117,30 @@ class AdminController extends Controller
             'current_balance' => $user->balance,
         ];
 
+        $referralDetails = $user->referrals->map(function ($referral) use ($packages) {
+            $package = $referral->investment_package ? ($packages[$referral->investment_package] ?? null) : null;
+
+            return [
+                'name' => $referral->name,
+                'email' => $referral->email,
+                'package_code' => $referral->investment_package,
+                'package_name' => $package['name'] ?? '—',
+                'package_deposit' => $package['deposit_amount'] ?? $referral->initial_deposit_amount,
+                'total_deposited' => $referral->deposits->sum('amount'),
+                'total_withdrawn' => $referral->withdrawals->sum('amount'),
+                'balance' => $referral->balance,
+                'points' => $referral->points,
+                'joined_at' => $referral->created_at,
+            ];
+        });
+
         return view('admin.user-show', compact(
             'user',
             'packages',
             'referralCounts',
             'referralProgress',
-            'financials'
+            'financials',
+            'referralDetails'
         ));
     }
 
@@ -338,10 +364,15 @@ class AdminController extends Controller
     {
         $this->checkAdminRole();
 
+        $request->validate([
+            'failure_reason' => 'required|string|max:500',
+        ]);
+
         if ($deposit->status !== 'failed') {
-            DB::transaction(function () use ($deposit) {
-                $deposit->update([
-                    'status' => 'failed',
+            DB::transaction(function () use ($deposit, $request) {
+            $deposit->update([
+                'status' => 'failed',
+                    'notes' => $request->failure_reason,
                 ]);
 
                 $user = $deposit->user;
@@ -492,36 +523,125 @@ class AdminController extends Controller
     {
         $this->checkAdminRole();
         
-        // Get current settings (you can create a settings table later)
+        $defaultPackages = config('investment.base_packages', config('investment.packages', []));
+
         $settings = [
-            'site_name' => config('app.name', 'Earn Quest'),
-            'site_email' => config('mail.from.address', 'admin@earnquest.com'),
-            'min_withdrawal' => 10,
-            'withdrawal_fee_percent' => 5,
-            'referral_bonus' => 5,
-            'video_points_rate' => 0.1, // $0.10 per point
+            'site_name' => \App\Models\Setting::getValue('site_name', config('app.name', 'Earn Quest')),
+            'site_email' => \App\Models\Setting::getValue('site_email', config('mail.from.address', 'admin@earnquest.com')),
+            'min_withdrawal' => \App\Models\Setting::getValue('min_withdrawal', config('platform.min_withdrawal', 10)),
+            'withdrawal_fee_percent' => \App\Models\Setting::getValue('withdrawal_fee_percent', config('platform.withdrawal_fee_percent', 5)),
+            'referral_bonus' => \App\Models\Setting::getValue('referral_bonus', config('platform.referral_bonus', 5)),
+            'video_points_rate' => \App\Models\Setting::getValue('video_points_rate', config('platform.video_points_rate', 0.1)),
+            'platform_wallet_address' => \App\Models\Setting::getValue('platform_wallet_address', config('platform.wallet_address')),
+            'packages' => array_replace_recursive(
+                $defaultPackages,
+                (array) \App\Models\Setting::getValue('packages', [])
+            ),
         ];
 
-        return view('admin.settings', compact('settings'));
+        return view('admin.settings', compact('settings', 'defaultPackages'));
     }
 
     public function updateSettings(Request $request)
     {
         $this->checkAdminRole();
         
-        $request->validate([
+        $validated = $request->validate([
             'site_name' => 'required|string|max:255',
             'site_email' => 'required|email|max:255',
             'min_withdrawal' => 'required|numeric|min:1',
             'withdrawal_fee_percent' => 'required|numeric|min:0|max:100',
             'referral_bonus' => 'required|numeric|min:0',
             'video_points_rate' => 'required|numeric|min:0',
+            'platform_wallet_address' => ['nullable', 'regex:/^0x[a-fA-F0-9]{40}$/'],
+            'packages' => 'required|array',
         ]);
 
-        // Here you would typically save to a settings table
-        // For now, we'll just show a success message
+        $defaultPackages = config('investment.base_packages', []);
+        $packagesInput = $request->input('packages', []);
+
+        foreach ($defaultPackages as $code => $config) {
+            $request->validate([
+                "packages.$code.deposit_amount" => 'nullable|numeric|min:1',
+                "packages.$code.withdrawal_cap" => 'nullable|numeric|min:0',
+            ]);
+        }
+
+        $normalizedPackages = [];
+        foreach ($defaultPackages as $code => $config) {
+            $normalizedPackages[$code] = [
+                'name' => $config['name'],
+                'description' => $config['description'],
+                'deposit_amount' => isset($packagesInput[$code]['deposit_amount'])
+                    ? (float) $packagesInput[$code]['deposit_amount']
+                    : (float) $config['deposit_amount'],
+                'withdrawal_cap' => isset($packagesInput[$code]['withdrawal_cap'])
+                    ? (float) $packagesInput[$code]['withdrawal_cap']
+                    : (float) $config['withdrawal_cap'],
+            ];
+        }
+
+        \App\Models\Setting::setValue('site_name', $validated['site_name']);
+        \App\Models\Setting::setValue('site_email', $validated['site_email']);
+        \App\Models\Setting::setValue('min_withdrawal', (float) $validated['min_withdrawal']);
+        \App\Models\Setting::setValue('withdrawal_fee_percent', (float) $validated['withdrawal_fee_percent']);
+        \App\Models\Setting::setValue('referral_bonus', (float) $validated['referral_bonus']);
+        \App\Models\Setting::setValue('video_points_rate', (float) $validated['video_points_rate']);
+        \App\Models\Setting::setValue('platform_wallet_address', $validated['platform_wallet_address']);
+        \App\Models\Setting::setValue('packages', $normalizedPackages);
+
+        \App\Models\Setting::apply($defaultPackages);
         
         return redirect()->route('admin.settings')->with('success', 'Settings updated successfully.');
+    }
+
+    public function referrals()
+    {
+        $this->checkAdminRole();
+
+        $referrerBaseQuery = User::withoutAdmins()->whereHas('referrals', function ($query) {
+            $query->withoutAdmins();
+        });
+
+        $referrers = (clone $referrerBaseQuery)
+            ->with(['referrals' => function ($query) {
+                $query->withoutAdmins()
+                    ->with(['deposits' => function ($q) {
+                        $q->where('status', 'completed');
+                    }, 'withdrawals' => function ($q) {
+                        $q->where('status', 'completed');
+                    }]);
+            }])
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        $totalReferrers = (clone $referrerBaseQuery)->count();
+        $totalReferrals = User::withoutAdmins()->whereNotNull('referrer_id')->count();
+        $activeReferrals = User::withoutAdmins()->whereNotNull('referrer_id')->where('has_deposited', true)->count();
+
+        $referralDepositSum = Deposit::where('status', 'completed')
+            ->whereHas('user', function ($query) {
+                $query->withoutAdmins()->whereNotNull('referrer_id');
+            })
+            ->sum('amount');
+
+        $referralWithdrawalSum = Withdrawal::where('status', 'completed')
+            ->whereHas('user', function ($query) {
+                $query->withoutAdmins()->whereNotNull('referrer_id');
+            })
+            ->sum('amount');
+
+        $packages = config('investment.packages', []);
+
+        $overview = [
+            'total_referrers' => $totalReferrers,
+            'total_referrals' => $totalReferrals,
+            'active_referrals' => $activeReferrals,
+            'total_referral_deposits' => $referralDepositSum,
+            'total_referral_withdrawals' => $referralWithdrawalSum,
+        ];
+
+        return view('admin.referrals', compact('referrers', 'overview', 'packages'));
     }
 
     public function rejectWithdrawal(Request $request, Withdrawal $withdrawal)

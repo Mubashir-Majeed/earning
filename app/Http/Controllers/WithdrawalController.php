@@ -19,8 +19,10 @@ class WithdrawalController extends Controller
     {
         $user = Auth::user();
 
+        $minWithdrawal = config('platform.min_withdrawal', 10);
+
         $request->validate([
-            'amount' => 'required|numeric|min:10',
+            'amount' => ['required', 'numeric', 'min:' . $minWithdrawal],
         ]);
 
         if (!$user->has_deposited || !$user->investment_package) {
@@ -36,7 +38,7 @@ class WithdrawalController extends Controller
             return redirect()->route('withdrawal')->with('error', 'Unable to determine your package details. Please contact support.');
         }
 
-        $minWithdrawal = 10;
+        $minWithdrawal = config('platform.min_withdrawal', 10);
         if ($request->amount < $minWithdrawal) {
             return redirect()->route('withdrawal')->with('error', 'Minimum withdrawal amount is $' . number_format($minWithdrawal, 2));
         }
@@ -68,8 +70,8 @@ class WithdrawalController extends Controller
         }
 
         // Calculate withdrawal fee (5% default or per-level)
-        $feePercentage = $user->withdrawalFeePercent();
-        $feeAmount = $request->amount * $feePercentage;
+        $feePercent = config('platform.withdrawal_fee_percent', $user->withdrawalFeePercent() * 100) / 100;
+        $feeAmount = round($request->amount * $feePercent, 2);
         $netAmount = $request->amount - $feeAmount;
 
         DB::transaction(function () use ($user, $request, $feeAmount, $netAmount) {

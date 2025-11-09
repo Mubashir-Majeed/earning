@@ -12,6 +12,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::view('/terms-of-service', 'legal.terms')->name('terms');
+Route::view('/privacy-policy', 'legal.privacy')->name('privacy');
+
 // Dashboard Routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -63,6 +66,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/withdrawals/{withdrawal}/approve', [AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
     Route::post('/withdrawals/{withdrawal}/process', [AdminController::class, 'processWithdrawal'])->name('withdrawals.process');
     Route::post('/withdrawals/{withdrawal}/reject', [AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+    
+    // Referrals Management
+    Route::get('/referrals', [AdminController::class, 'referrals'])->name('referrals');
     
     // Analytics Routes
     Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');

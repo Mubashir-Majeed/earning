@@ -17,7 +17,7 @@
         $availableProfit = max(0, $stats['balance'] - ($user->unwithdrawable_balance_min ?? 0));
         $withdrawalCap = $packageConfig['withdrawal_cap'] ?? $availableProfit;
         $maxWithdrawable = min($availableProfit, $withdrawalCap);
-        $minWithdrawal = 10;
+        $minWithdrawalValue = $minWithdrawal ?? config('platform.min_withdrawal', 10);
     @endphp
 
     <div class="max-w-4xl mx-auto">
@@ -27,13 +27,13 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <!-- Withdrawable Profit -->
-                <div class="flex items-center p-4 rounded-lg {{ $availableProfit >= $minWithdrawal ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
+                <div class="flex items-center p-4 rounded-lg {{ $availableProfit >= $minWithdrawalValue ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200' }}">
                     <div class="flex-shrink-0">
-                        <i class="fas {{ $availableProfit >= $minWithdrawal ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
+                        <i class="fas {{ $availableProfit >= $minWithdrawalValue ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500' }} text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <h4 class="text-sm font-medium {{ $availableProfit >= $minWithdrawal ? 'text-green-800' : 'text-red-800' }}">Withdrawable Profit</h4>
-                        <p class="text-sm {{ $availableProfit >= $minWithdrawal ? 'text-green-700' : 'text-red-700' }}">${{ number_format($availableProfit, 2) }} / ${{ number_format($minWithdrawal, 2) }} required</p>
+                        <h4 class="text-sm font-medium {{ $availableProfit >= $minWithdrawalValue ? 'text-green-800' : 'text-red-800' }}">Withdrawable Profit</h4>
+                        <p class="text-sm {{ $availableProfit >= $minWithdrawalValue ? 'text-green-700' : 'text-red-700' }}">${{ number_format($availableProfit, 2) }} / ${{ number_format($minWithdrawalValue, 2) }} required</p>
                     </div>
                 </div>
 
@@ -167,13 +167,13 @@
                                    name="amount" 
                                    id="amount" 
                                    step="0.01" 
-                                   min="{{ $maxWithdrawable >= $minWithdrawal ? $minWithdrawal : max(0, $maxWithdrawable) }}" 
-                                   max="{{ max(0, $maxWithdrawable) }}"
-                                   value="{{ $maxWithdrawable >= $minWithdrawal ? $minWithdrawal : max(0, $maxWithdrawable) }}"
+                                   min="{{ $maxWithdrawable >= $minWithdrawalValue ? $minWithdrawalValue : max(0, $maxWithdrawable) }}" 
+                                   max="{{ $maxWithdrawable }}"
+                                   value="{{ $maxWithdrawable >= $minWithdrawalValue ? $minWithdrawalValue : max(0, $maxWithdrawable) }}"
                                    class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
                         </div>
                         <p class="mt-2 text-sm text-gray-500">
-                            Minimum: ${{ number_format($minWithdrawal, 2) }} | Maximum: ${{ number_format($maxWithdrawable, 2) }} (package cap & retained deposit apply)
+                            Minimum: ${{ number_format($minWithdrawalValue, 2) }} | Maximum: ${{ number_format($maxWithdrawable, 2) }} (package cap & retained deposit apply)
                         </p>
                     </div>
 
@@ -255,7 +255,7 @@
                                 </div>
                                 <div class="flex items-center">
                                     <i class="fas fa-dollar-sign mr-2"></i>
-                                    <span>Minimum withdrawal amount is ${{ number_format($minWithdrawal, 2) }}</span>
+                                    <span>Minimum withdrawal amount is ${{ number_format($minWithdrawalValue, 2) }}</span>
                                 </div>
                                 <div class="flex items-center">
                                     <i class="fas fa-lock mr-2"></i>
@@ -330,9 +330,9 @@
             const amount = parseFloat(amountInput.value);
             const maxAmount = {{ max(0, $maxWithdrawable) }};
             
-            if (amount < {{ $minWithdrawal }}) {
+            if (amount < {{ $minWithdrawalValue }}) {
                 e.preventDefault();
-                alert('Minimum withdrawal amount is ${{ number_format($minWithdrawal, 2) }}');
+                alert('Minimum withdrawal amount is ${{ number_format($minWithdrawalValue, 2) }}');
                 return;
             }
             

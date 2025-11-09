@@ -305,6 +305,12 @@
                         'active' => ['admin.withdrawals', 'admin.withdrawals.*'],
                     ],
                     [
+                        'label' => 'Referrals',
+                        'icon' => 'fa-user-group',
+                        'route' => 'admin.referrals',
+                        'active' => ['admin.referrals'],
+                    ],
+                    [
                         'label' => 'Analytics',
                         'icon' => 'fa-chart-line',
                         'route' => 'admin.analytics',
@@ -416,6 +422,8 @@
             @yield('content')
         </main>
     </div>
+
+    @yield('scripts')
 
     <!-- Bottom Navigation Bar (Mobile Only) -->
     <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl" style="display: none;">

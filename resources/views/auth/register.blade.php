@@ -137,9 +137,9 @@
                    class="w-4 h-4 text-yellow-400 bg-white/10 border-white/20 rounded focus:ring-yellow-400 focus:ring-2 mt-1">
             <label for="terms" class="ml-3 text-sm text-gray-300">
                 I agree to the 
-                <a href="#" class="text-yellow-400 hover:text-yellow-300 transition-colors">Terms of Service</a> 
+                <a href="{{ route('terms') }}" target="_blank" class="text-yellow-400 hover:text-yellow-300 transition-colors">Terms of Service</a> 
                 and 
-                <a href="#" class="text-yellow-400 hover:text-yellow-300 transition-colors">Privacy Policy</a>
+                <a href="{{ route('privacy') }}" target="_blank" class="text-yellow-400 hover:text-yellow-300 transition-colors">Privacy Policy</a>
             </label>
         </div>
 

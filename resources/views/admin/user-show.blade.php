@@ -123,6 +123,58 @@
         </div>
     </div>
 
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Referral Details</h3>
+            <span class="text-xs uppercase tracking-wide text-gray-500">{{ $referralDetails->count() }} referrals</span>
+        </div>
+
+        @if($referralDetails->isEmpty())
+            <div class="text-center text-sm text-gray-500 py-8">
+                No qualifying referrals yet. Encourage the user to share their link.
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs uppercase text-gray-500">
+                            <th class="pb-2">Referral</th>
+                            <th class="pb-2">Package</th>
+                            <th class="pb-2">Deposited</th>
+                            <th class="pb-2">Withdrawn</th>
+                            <th class="pb-2">Balance</th>
+                            <th class="pb-2">Points</th>
+                            <th class="pb-2">Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-gray-900">
+                        @foreach($referralDetails as $detail)
+                            <tr class="hover:bg-blue-50/40 transition">
+                                <td class="py-3">
+                                    <div class="flex flex-col">
+                                        <span class="font-semibold">{{ $detail['name'] }}</span>
+                                        <span class="text-xs text-gray-500">{{ $detail['email'] }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <div class="flex flex-col">
+                                        <span>{{ $detail['package_name'] }}</span>
+                                        <span class="text-xs text-gray-500">${{ number_format($detail['package_deposit'] ?? 0, 2) }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-3">${{ number_format($detail['total_deposited'], 2) }}</td>
+                                <td class="py-3">${{ number_format($detail['total_withdrawn'], 2) }}</td>
+                                <td class="py-3">${{ number_format($detail['balance'] ?? 0, 2) }}</td>
+                                <td class="py-3">{{ number_format($detail['points'] ?? 0) }}</td>
+                                <td class="py-3 text-xs text-gray-500">{{ optional($detail['joined_at'])->format('M d, Y') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
+
     <div class="flex justify-between items-center">
         <a href="{{ route('admin.users') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Back</a>
     </div>

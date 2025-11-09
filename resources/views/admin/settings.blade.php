@@ -12,10 +12,10 @@
             <p class="text-gray-600">Configure platform parameters and preferences</p>
         </div>
         <div class="flex space-x-3">
-            <button onclick="resetForm()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+            <button type="button" onclick="resetSettings()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                 <i class="fas fa-undo mr-2"></i>Reset
             </button>
-            <button onclick="saveSettings()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button type="submit" form="settingsForm" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                 <i class="fas fa-save mr-2"></i>Save Changes
             </button>
         </div>
@@ -67,7 +67,7 @@
                                    name="min_withdrawal" 
                                    id="min_withdrawal" 
                                    step="0.01"
-                                   value="{{ $settings['min_withdrawal'] }}"
+                                   value="{{ old('min_withdrawal', $settings['min_withdrawal']) }}"
                                    class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
@@ -81,12 +81,26 @@
                                    step="0.01"
                                    min="0"
                                    max="100"
-                                   value="{{ $settings['withdrawal_fee_percent'] }}"
+                                   value="{{ old('withdrawal_fee_percent', $settings['withdrawal_fee_percent']) }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                 <span class="text-gray-500 sm:text-sm">%</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div>
+                        <label for="platform_wallet_address" class="block text-sm font-medium text-gray-700 mb-2">Platform Deposit Wallet (BEP20)</label>
+                        <input type="text"
+                               name="platform_wallet_address"
+                               id="platform_wallet_address"
+                               value="{{ old('platform_wallet_address', $settings['platform_wallet_address']) }}"
+                               placeholder="0x..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono">
+                        <p class="mt-1 text-xs text-gray-500">Users will see this address on the deposit screen and it will be locked for editing.</p>
+                        @error('platform_wallet_address')
+                            <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -126,6 +140,51 @@
                                    class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Package Settings -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 lg:col-span-2">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-box-open mr-2 text-indigo-600"></i>Package Settings
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    @foreach($settings['packages'] as $code => $package)
+                        <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                            <h4 class="text-md font-semibold text-gray-900 mb-2 flex items-center justify-between">
+                                <span>{{ $package['name'] }}</span>
+                                <span class="text-xs uppercase tracking-wide text-gray-500">{{ $code }}</span>
+                            </h4>
+                            <p class="text-xs text-gray-500 mb-4">{{ $package['description'] }}</p>
+
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Deposit Amount ($)</label>
+                                    <input type="number"
+                                           name="packages[{{ $code }}][deposit_amount]"
+                                           step="0.01"
+                                           min="1"
+                                           value="{{ old("packages.$code.deposit_amount", $package['deposit_amount']) }}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('packages.' . $code . '.deposit_amount')
+                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Withdrawal Cap ($)</label>
+                                    <input type="number"
+                                           name="packages[{{ $code }}][withdrawal_cap]"
+                                           step="0.01"
+                                           min="0"
+                                           value="{{ old("packages.$code.withdrawal_cap", $package['withdrawal_cap']) }}"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    @error('packages.' . $code . '.withdrawal_cap')
+                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
@@ -203,15 +262,11 @@
 
 @section('scripts')
 <script>
-    function saveSettings() {
-        document.getElementById('settingsForm').submit();
-    }
-    
-    function resetForm() {
+    window.resetSettings = function () {
         if (confirm('Are you sure you want to reset all settings to their original values?')) {
             location.reload();
         }
-    }
+    };
     
     // Auto-save functionality
     let saveTimeout;

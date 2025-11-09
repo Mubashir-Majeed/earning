@@ -1,26 +1,29 @@
 <?php
 
-return [
-    'packages' => [
-        'starter_35' => [
-            'name' => 'Starter',
-            'deposit_amount' => 35.00,
-            'withdrawal_cap' => 24.00,
-            'description' => 'Ideal for new members who want to experience Earn Quest with a low commitment.',
-        ],
-        'growth_50' => [
-            'name' => 'Growth',
-            'deposit_amount' => 50.00,
-            'withdrawal_cap' => 36.00,
-            'description' => 'Unlock higher earning limits with an accessible mid-tier package.',
-        ],
-        'pro_100' => [
-            'name' => 'Pro',
-            'deposit_amount' => 100.00,
-            'withdrawal_cap' => 81.00,
-            'description' => 'Maximize rewards with the flagship Earn Quest package.',
-        ],
+$defaultPackages = [
+    'starter_35' => [
+        'name' => 'Starter',
+        'deposit_amount' => 35.00,
+        'withdrawal_cap' => 24.00,
+        'description' => 'Ideal for new members who want to experience Earn Quest with a low commitment.',
     ],
+    'growth_50' => [
+        'name' => 'Growth',
+        'deposit_amount' => 50.00,
+        'withdrawal_cap' => 36.00,
+        'description' => 'Unlock higher earning limits with an accessible mid-tier package.',
+    ],
+    'pro_100' => [
+        'name' => 'Pro',
+        'deposit_amount' => 100.00,
+        'withdrawal_cap' => 81.00,
+        'description' => 'Maximize rewards with the flagship Earn Quest package.',
+    ],
+];
+
+return [
+    'base_packages' => $defaultPackages,
+    'packages' => $defaultPackages,
 
     'referral_rules' => [
         'starter_35' => [

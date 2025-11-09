@@ -19,6 +19,7 @@ class Deposit extends Model
         'payment_id',
         'status',
         'notes',
+        'receipt_path',
         'completed_at',
     ];
 
