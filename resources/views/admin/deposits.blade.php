@@ -308,9 +308,10 @@
                 return;
             }
 
-            activeForm.querySelector('input[name="failure_reason"]').value = reason;
+            const formToSubmit = activeForm;
+            formToSubmit.querySelector('input[name="failure_reason"]').value = reason;
             closeModal();
-            activeForm.submit();
+            formToSubmit.submit();
         });
 
         modal.addEventListener('click', (event) => {
