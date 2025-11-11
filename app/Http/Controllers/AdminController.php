@@ -129,7 +129,6 @@ class AdminController extends Controller
                 'total_deposited' => $referral->deposits->sum('amount'),
                 'total_withdrawn' => $referral->withdrawals->sum('amount'),
                 'balance' => $referral->balance,
-                'points' => $referral->points,
                 'joined_at' => $referral->created_at,
             ];
         });
@@ -210,7 +209,7 @@ class AdminController extends Controller
             'thumbnail_url' => 'nullable|url',
             'thumbnail' => 'nullable|image|max:2048',
             'duration' => 'required|integer|min:1',
-            'points_value' => 'required|integer|min:1',
+            'dollar_value' => 'required|numeric|min:0.01',
             'assigned_date' => 'nullable|date',
             'max_watches_per_day' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
@@ -218,7 +217,7 @@ class AdminController extends Controller
 
         $validated = $request->only([
             'title', 'description', 'youtube_url', 'youtube_id', 'category',
-            'thumbnail_url', 'duration', 'points_value', 'assigned_date',
+            'thumbnail_url', 'duration', 'dollar_value', 'assigned_date',
             'max_watches_per_day', 'is_active'
         ]);
 
@@ -333,7 +332,6 @@ class AdminController extends Controller
                 if (!$alreadyAwarded) {
                     // Award $5 to referrer
                     $referrer->increment('balance', 5.00);
-                    $referrer->increment('points', 100);
                     
                     // Increment referrer's referral count (only if not already counted)
                     $referrer->increment('referrals_count');
@@ -341,7 +339,6 @@ class AdminController extends Controller
                     // Create earning record for referrer
                     \App\Models\UserEarning::create([
                         'user_id' => $referrer->id,
-                        'points_earned' => 100,
                         'dollar_value' => 5.00,
                         'type' => 'referral',
                         'description' => "Referral bonus for {$deposit->user->name}",
@@ -531,7 +528,6 @@ class AdminController extends Controller
             'min_withdrawal' => \App\Models\Setting::getValue('min_withdrawal', config('platform.min_withdrawal', 10)),
             'withdrawal_fee_percent' => \App\Models\Setting::getValue('withdrawal_fee_percent', config('platform.withdrawal_fee_percent', 5)),
             'referral_bonus' => \App\Models\Setting::getValue('referral_bonus', config('platform.referral_bonus', 5)),
-            'video_points_rate' => \App\Models\Setting::getValue('video_points_rate', config('platform.video_points_rate', 0.1)),
             'platform_wallet_address' => \App\Models\Setting::getValue('platform_wallet_address', config('platform.wallet_address')),
             'packages' => array_replace_recursive(
                 $defaultPackages,
@@ -552,7 +548,6 @@ class AdminController extends Controller
             'min_withdrawal' => 'required|numeric|min:1',
             'withdrawal_fee_percent' => 'required|numeric|min:0|max:100',
             'referral_bonus' => 'required|numeric|min:0',
-            'video_points_rate' => 'required|numeric|min:0',
             'platform_wallet_address' => ['nullable', 'regex:/^0x[a-fA-F0-9]{40}$/'],
             'packages' => 'required|array',
         ]);
@@ -586,7 +581,6 @@ class AdminController extends Controller
         \App\Models\Setting::setValue('min_withdrawal', (float) $validated['min_withdrawal']);
         \App\Models\Setting::setValue('withdrawal_fee_percent', (float) $validated['withdrawal_fee_percent']);
         \App\Models\Setting::setValue('referral_bonus', (float) $validated['referral_bonus']);
-        \App\Models\Setting::setValue('video_points_rate', (float) $validated['video_points_rate']);
         \App\Models\Setting::setValue('platform_wallet_address', $validated['platform_wallet_address']);
         \App\Models\Setting::setValue('packages', $normalizedPackages);
 

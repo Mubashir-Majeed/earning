@@ -156,8 +156,8 @@
                                 <div class="text-xs sm:text-sm text-gray-400 mt-1">Daily Earnings</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-2xl sm:text-3xl font-bold text-red-400">750</div>
-                                <div class="text-xs sm:text-sm text-gray-400 mt-1">Points = $80</div>
+                                <div class="text-2xl sm:text-3xl font-bold text-red-400">$0.10+</div>
+                                <div class="text-xs sm:text-sm text-gray-400 mt-1">Per Video</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-2xl sm:text-3xl font-bold text-green-400">48h</div>
@@ -244,7 +244,7 @@
                         <h3 class="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">High Earnings</h3>
                         <p class="text-sm sm:text-base text-gray-300 leading-relaxed">
                             Earn consistent rewards by watching AI animated videos with packages starting at $35. 
-                            750 points equals $80 with instant payouts.
+                            Earn dollars directly with instant payouts.
                         </p>
                     </div>
 
@@ -353,7 +353,7 @@
                         <h3 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Watch Videos</h3>
                         <p class="text-sm sm:text-base text-gray-300 px-2">
                             Get 5-10 daily video tasks. Watch complete videos 
-                            to earn points that convert to real money.
+                            to earn dollars directly.
                         </p>
                     </div>
 
@@ -410,7 +410,7 @@
                             </div>
                             <div class="flex items-center space-x-3">
                                 <i class="fas fa-check text-green-400 flex-shrink-0"></i>
-                                <span class="text-sm sm:text-base">750 points = $80 conversion</span>
+                                <span class="text-sm sm:text-base">Direct dollar earnings</span>
                             </div>
                             <div class="flex items-center space-x-3">
                                 <i class="fas fa-check text-green-400 flex-shrink-0"></i>

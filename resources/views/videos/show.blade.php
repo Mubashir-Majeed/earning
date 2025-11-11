@@ -30,7 +30,7 @@
                                         <h3 class="text-xl font-bold mb-2">{{ $video->title }}</h3>
                                         <p class="text-sm text-gray-300 mb-4">Click "Start Watching" below to begin</p>
                                         <div class="text-xs text-gray-400">
-                                            Duration: {{ $video->formatted_duration }} | Points: {{ $video->points_value }}
+                                            Duration: {{ $video->formatted_duration }} | Earnings: ${{ number_format($video->dollar_value, 2) }}
                                         </div>
                                     </div>
                                 </div>
@@ -73,7 +73,7 @@
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                                     </svg>
-                                    {{ $task->points_earned }} points
+                                    ${{ number_format($task->dollar_value ?? $video->dollar_value, 2) }}
                                 </span>
                             </div>
                         </div>
@@ -97,8 +97,8 @@
                                         <ul class="list-disc list-inside space-y-1">
                                             <li>Watch the entire video to completion</li>
                                             <li>Do not skip or fast forward</li>
-                                            <li>Points will be awarded automatically when video ends</li>
-                                            <li>You can only earn points once per video</li>
+                                            <li>Dollars will be awarded automatically when video ends</li>
+                                            <li>You can only earn once per video</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -124,7 +124,7 @@
                                 <div class="ml-3">
                                     <h3 class="text-sm font-medium text-green-800">Video Completed!</h3>
                                     <div class="mt-2 text-sm text-green-700">
-                                        <p>Congratulations! You have earned <strong>{{ $task->points_earned }} points</strong> for watching this video.</p>
+                                        <p>Congratulations! You have earned <strong>${{ number_format($task->dollar_value ?? $video->dollar_value, 2) }}</strong> for watching this video.</p>
                                     </div>
                                 </div>
                             </div>
@@ -366,7 +366,7 @@
                                     </div>
                                 </div>
                                 <p class="mt-2 text-xs text-blue-700">
-                                    Watch ${requiredWatchTime} seconds to earn {{ $video->points_value }} points
+                                    Watch ${requiredWatchTime} seconds to earn ${{ number_format($video->dollar_value, 2) }}
                                 </p>
                             </div>
                         </div>
@@ -413,7 +413,7 @@
                     button.disabled = true;
                     
                     // Show success message
-                    showSuccessMessage(data.points_earned, data.dollar_value, currentWatchTime);
+                    showSuccessMessage(data.dollar_value, currentWatchTime);
                     
                     // Update progress to 100%
                     updateProgress();
@@ -428,7 +428,7 @@
         }
         
         // Show success message
-        function showSuccessMessage(points, dollarValue, watchTime) {
+        function showSuccessMessage(dollarValue, watchTime) {
             const watchInstructions = document.querySelector('.bg-yellow-50');
             if (watchInstructions) {
                 const minutes = Math.floor(watchTime / 60);
@@ -444,7 +444,7 @@
                         <div class="ml-3">
                             <h3 class="text-sm font-medium text-green-800">Video Completed Successfully!</h3>
                             <div class="mt-2 text-sm text-green-700">
-                                <p>Congratulations! You earned <strong>${points} points</strong> ($${dollarValue.toFixed(2)})</p>
+                                <p>Congratulations! You earned <strong>$${dollarValue.toFixed(2)}</strong></p>
                                 <p class="mt-1">Watch time: ${minutes}:${seconds.toString().padStart(2, '0')} | Your balance has been updated.</p>
                             </div>
                         </div>

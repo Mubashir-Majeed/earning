@@ -17,7 +17,7 @@ class Video extends Model
         'category',
         'thumbnail_url',
         'duration',
-        'points_value',
+        'dollar_value',
         'is_active',
         'assigned_date',
         'max_watches_per_day',
@@ -27,7 +27,7 @@ class Video extends Model
     {
         return [
             'duration' => 'integer',
-            'points_value' => 'integer',
+            'dollar_value' => 'decimal:2',
             'is_active' => 'boolean',
             'assigned_date' => 'date',
             'max_watches_per_day' => 'integer',

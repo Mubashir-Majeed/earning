@@ -4,7 +4,6 @@
 @section('page-title', 'Dashboard')
 @section('quick-videos', number_format($stats['total_videos_watched']))
 @section('quick-earnings', '$' . number_format($stats['total_earnings'], 2))
-@section('quick-points', number_format($stats['total_points']))
 
 @section('content')
     <div class="space-y-8">
@@ -31,10 +30,6 @@
                     <div class="bg-white/15 backdrop-blur rounded-2xl px-5 py-4">
                         <p class="text-xs uppercase tracking-widest text-blue-100">Total Earnings</p>
                         <p class="text-2xl font-bold">${{ number_format($stats['total_earnings'], 2) }}</p>
-                    </div>
-                    <div class="bg-white/15 backdrop-blur rounded-2xl px-5 py-4">
-                        <p class="text-xs uppercase tracking-widest text-blue-100">Points</p>
-                        <p class="text-2xl font-bold">{{ number_format($stats['total_points']) }}</p>
                     </div>
                 </div>
             </div>
@@ -68,18 +63,6 @@
             <div class="bg-white/90 backdrop-blur rounded-2xl border border-white/40 shadow-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-slate-500">Points Earned</p>
-                        <p class="text-3xl font-bold text-slate-900">{{ number_format($stats['total_points']) }}</p>
-                    </div>
-                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                        <i class="fas fa-star text-lg"></i>
-                    </div>
-                </div>
-                <p class="mt-4 text-sm text-purple-600 flex items-center gap-1"><i class="fas fa-arrow-trend-up"></i><span>+15% from last week</span></p>
-            </div>
-            <div class="bg-white/90 backdrop-blur rounded-2xl border border-white/40 shadow-xl p-6">
-                <div class="flex items-center justify-between">
-                    <div>
                         <p class="text-sm text-slate-500">Today’s Earnings</p>
                         <p class="text-3xl font-bold text-slate-900">${{ number_format($stats['today_earnings'], 2) }}</p>
                     </div>
@@ -91,7 +74,7 @@
             </div>
         </section>
 
-        @if(!$user->has_deposited)
+        @if(!$user->has_deposited && !$pendingDeposit)
             <section class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 text-white shadow-2xl">
                 <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,<svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.25"><circle cx="22" cy="22" r="2"/></g></svg>');"></div>
                 <div class="relative z-10 space-y-6">
@@ -103,6 +86,31 @@
                     <div class="flex flex-col sm:flex-row gap-4">
                         <a href="{{ route('deposit') }}" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-rose-600 font-extrabold rounded-2xl shadow-xl hover:bg-rose-50 transition-transform hover:scale-[1.02]">
                             <i class="fas fa-credit-card"></i> Choose Package
+                        </a>
+                        <a href="{{ route('referrals') }}" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/20 text-white font-semibold rounded-2xl border border-white/30 hover:bg-white/25 transition">
+                            <i class="fas fa-users"></i> View Referral Rules
+                        </a>
+                    </div>
+                </div>
+            </section>
+        @elseif($pendingDeposit)
+            @php
+                $pendingPackage = $pendingDeposit->package_code ? config('investment.packages.' . $pendingDeposit->package_code) : null;
+            @endphp
+            <section class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white shadow-2xl">
+                <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,<svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.25"><circle cx="22" cy="22" r="2"/></g></svg>');"></div>
+                <div class="relative z-10 space-y-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <h3 class="text-3xl font-black">Deposit Under Review</h3>
+                        <span class="inline-flex items-center px-4 py-1 rounded-full bg-white/20 text-sm font-semibold uppercase tracking-widest">Pending Verification</span>
+                    </div>
+                    <p class="text-lg text-amber-100 max-w-4xl">
+                        Your deposit request for the <strong>{{ $pendingPackage['name'] ?? 'Selected' }} Package (${{ number_format($pendingDeposit->amount, 2) }})</strong> is currently under review. 
+                        You'll be notified once verification is complete and your account is activated.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="{{ route('deposit') }}" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-amber-600 font-extrabold rounded-2xl shadow-xl hover:bg-amber-50 transition-transform hover:scale-[1.02]">
+                            <i class="fas fa-eye"></i> View Deposit Status
                         </a>
                         <a href="{{ route('referrals') }}" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/20 text-white font-semibold rounded-2xl border border-white/30 hover:bg-white/25 transition">
                             <i class="fas fa-users"></i> View Referral Rules
@@ -127,11 +135,91 @@
             </section>
         @endif
 
+        @if($user->level === 'level_1' && isset($level2Status))
+            @php
+                $req = $level2Status['requirements'];
+                $canUpgrade = $level2Status['can_upgrade'];
+            @endphp
+            <section class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-600 text-white shadow-2xl">
+                <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,<svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.25"><circle cx="22" cy="22" r="2"/></g></svg>');"></div>
+                <div class="relative z-10 space-y-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <h3 class="text-3xl font-black">Upgrade to Level 2</h3>
+                            <p class="text-lg text-purple-100 mt-2">Unlock more daily videos, higher withdrawal limits, and better rewards!</p>
+                        </div>
+                        @if($canUpgrade)
+                            <form method="POST" action="{{ route('level.upgrade') }}" class="inline-block">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-purple-600 font-extrabold rounded-2xl shadow-xl hover:bg-purple-50 transition-transform hover:scale-[1.02]">
+                                    <i class="fas fa-arrow-up"></i> Upgrade Now
+                                </button>
+                            </form>
+                        @else
+                            <span class="inline-flex items-center px-4 py-1 rounded-full bg-white/20 text-sm font-semibold uppercase tracking-widest">Requirements Pending</span>
+                        @endif
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+                        <div class="bg-white/15 backdrop-blur rounded-xl p-4 border border-white/20">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs uppercase tracking-widest text-purple-100">Total Referrals</p>
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center {{ $req['total_referrals']['met'] ? 'bg-green-500' : 'bg-white/20' }}">
+                                    <i class="fas {{ $req['total_referrals']['met'] ? 'fa-check' : 'fa-times' }} text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold">{{ $req['total_referrals']['current'] }}/{{ $req['total_referrals']['required'] }}</p>
+                        </div>
+                        
+                        <div class="bg-white/15 backdrop-blur rounded-xl p-4 border border-white/20">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs uppercase tracking-widest text-purple-100">Wallet Balance</p>
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center {{ $req['wallet_balance']['met'] ? 'bg-green-500' : 'bg-white/20' }}">
+                                    <i class="fas {{ $req['wallet_balance']['met'] ? 'fa-check' : 'fa-times' }} text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold">${{ number_format($req['wallet_balance']['current'], 2) }}/${{ number_format($req['wallet_balance']['required'], 2) }}</p>
+                        </div>
+                        
+                        <div class="bg-white/15 backdrop-blur rounded-xl p-4 border border-white/20">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs uppercase tracking-widest text-purple-100">Pro Referrals</p>
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center {{ $req['pro_referrals']['met'] ? 'bg-green-500' : 'bg-white/20' }}">
+                                    <i class="fas {{ $req['pro_referrals']['met'] ? 'fa-check' : 'fa-times' }} text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold">{{ $req['pro_referrals']['current'] }}/{{ $req['pro_referrals']['required'] }}</p>
+                        </div>
+                        
+                        <div class="bg-white/15 backdrop-blur rounded-xl p-4 border border-white/20">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs uppercase tracking-widest text-purple-100">Growth Referrals</p>
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center {{ $req['growth_referrals']['met'] ? 'bg-green-500' : 'bg-white/20' }}">
+                                    <i class="fas {{ $req['growth_referrals']['met'] ? 'fa-check' : 'fa-times' }} text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold">{{ $req['growth_referrals']['current'] }}/{{ $req['growth_referrals']['required'] }}</p>
+                        </div>
+                        
+                        <div class="bg-white/15 backdrop-blur rounded-xl p-4 border border-white/20">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs uppercase tracking-widest text-purple-100">Starter Referrals</p>
+                                <span class="w-6 h-6 rounded-full flex items-center justify-center {{ $req['starter_referrals']['met'] ? 'bg-green-500' : 'bg-white/20' }}">
+                                    <i class="fas {{ $req['starter_referrals']['met'] ? 'fa-check' : 'fa-times' }} text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-2xl font-bold">{{ $req['starter_referrals']['current'] }}/{{ $req['starter_referrals']['required'] }}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        @endif
+
         @php
             $packageCatalog = config('investment.packages');
             $primaryReferralRule = collect($referralProgress)->firstWhere('is_alternative', false);
             $alternativeReferralRules = collect($referralProgress)->filter(fn ($rule) => $rule['is_alternative']);
-            $hasPendingDeposit = !empty($user->pending_deposit_amount);
+            $hasPendingDeposit = $pendingDeposit || !empty($user->pending_deposit_amount);
             $referralMet = $user->meetsReferralRequirementForWithdrawal();
         @endphp
 
@@ -332,10 +420,10 @@
                                 <i class="fas fa-star text-sm"></i>
                             </span>
                             <div class="flex-1">
-                                <p class="text-sm font-semibold text-slate-900">Earned Points</p>
+                                <p class="text-sm font-semibold text-slate-900">Earned Dollars</p>
                                 <p class="text-xs text-slate-500">5 minutes ago</p>
                             </div>
-                            <span class="text-sm font-bold text-blue-600">+10 pts</span>
+                            <span class="text-sm font-bold text-blue-600">+$0.10</span>
                         </div>
                         <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100">
                             <span class="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">

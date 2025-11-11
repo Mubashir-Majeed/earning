@@ -5,7 +5,6 @@
 
 @section('quick-videos', $stats['total_videos_watched'])
 @section('quick-earnings', '$'.number_format($stats['total_earnings'], 2))
-@section('quick-points', number_format($stats['total_points']))
 
 @section('content')
             @if(session('success'))

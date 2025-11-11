@@ -44,6 +44,13 @@ class DashboardController extends Controller
         $package = $user->investment_package ? config('investment.packages.' . $user->investment_package) : null;
         $referralProgress = $user->referralProgress();
         $referralCounts = $user->referralCountsByPackage();
+        
+        // Get latest deposit status for dashboard
+        $latestDeposit = $user->deposits()->latest()->first();
+        $pendingDeposit = $latestDeposit && $latestDeposit->status === 'pending' ? $latestDeposit : null;
+
+        // Get Level 2 requirements status
+        $level2Status = $user->meetsLevel2Requirements();
 
         return view('dashboard', compact(
             'user',
@@ -52,7 +59,9 @@ class DashboardController extends Controller
             'recentEarnings',
             'package',
             'referralProgress',
-            'referralCounts'
+            'referralCounts',
+            'pendingDeposit',
+            'level2Status'
         ));
     }
 
@@ -62,52 +71,40 @@ class DashboardController extends Controller
         
         $latestDeposit = $user->deposits()->latest()->with('user')->first();
         $packages = config('investment.packages', []);
+        $viewData = [
+            'user' => $user,
+            'packages' => $packages,
+            'platformWallet' => config('platform.wallet_address'),
+            'latestDeposit' => $latestDeposit,
+        ];
 
         if ($latestDeposit) {
             if ($latestDeposit->status === 'pending') {
-                return view('deposit-pending', [
-                    'user' => $user,
-                    'packages' => $packages,
+                return view('deposit-pending', array_merge($viewData, [
                     'pendingDeposit' => $latestDeposit,
-                ]);
+                ]));
             }
 
             if ($latestDeposit->status === 'failed' && $request->boolean('retry')) {
-                if (!$user->hasBoundWallet()) {
-                    return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit.');
-                }
-
-                return view('deposit', compact('user', 'packages'));
+                return view('deposit', $viewData);
             }
 
             if ($latestDeposit->status === 'failed' && !$request->boolean('retry')) {
-                return view('deposit-status', [
-                    'user' => $user,
-                    'packages' => $packages,
+                return view('deposit-status', array_merge($viewData, [
                     'depositRecord' => $latestDeposit,
-                ]);
+                ]));
             }
 
             if ($request->boolean('new')) {
-                if (!$user->hasBoundWallet()) {
-                    return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit.');
-                }
-
-                return view('deposit', compact('user', 'packages'));
+                return view('deposit', $viewData);
             }
 
-            return view('deposit-status', [
-                'user' => $user,
-                'packages' => $packages,
+            return view('deposit-status', array_merge($viewData, [
                 'depositRecord' => $latestDeposit,
-            ]);
+            ]));
         }
 
-        if (!$user->hasBoundWallet()) {
-            return redirect()->route('profile.edit')->with('error', 'Please bind your BEP20 withdrawal wallet before submitting a deposit.');
-        }
-
-        return view('deposit', compact('user', 'packages'));
+        return view('deposit', $viewData);
     }
 
     public function withdrawal()
@@ -176,6 +173,17 @@ class DashboardController extends Controller
         ]);
 
         return back()->with('success', 'Thanks for subscribing to our channel!');
+    }
+
+    public function upgradeLevel(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->upgradeToLevel2()) {
+            return redirect()->route('dashboard')->with('success', 'Congratulations! You have been upgraded to Level 2!');
+        }
+
+        return back()->with('error', 'You do not meet all the requirements for Level 2 upgrade yet.');
     }
 
 }

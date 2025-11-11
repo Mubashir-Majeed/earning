@@ -12,6 +12,17 @@
                     <p class="text-gray-600">Select a package to unlock video tasks, referral rewards, and withdrawals. Your deposit stays as locked capital while you earn on top.</p>
                 </div>
 
+                @if($errors->any())
+                    <div class="mb-6 border border-red-200 bg-red-50 text-red-700 rounded-lg p-4">
+                        <p class="text-sm font-semibold mb-2">Please address the following:</p>
+                        <ul class="text-sm list-disc list-inside space-y-1">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @php
                     $selectedPackage = old('package_code', $user->pending_package_code ?? $user->investment_package ?? 'starter_35');
                 @endphp
@@ -73,22 +84,6 @@
                         <!-- Primary Withdrawal Wallet -->
                         @if($user->hasBoundWallet())
                             <input type="hidden" name="wallet_address" value="{{ $user->bep20_address }}">
-                            <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                                <h4 class="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                                    <i class="fas fa-lock"></i>
-                                    Bound Withdrawal Wallet
-                                </h4>
-                                <p class="text-sm text-gray-700 font-mono break-all">{{ $user->bep20_address }}</p>
-                                <p class="text-xs text-gray-500 mt-1">Wallet binding is permanent. Contact support if it needs to be updated.</p>
-                            </div>
-                        @else
-                            <div class="border border-yellow-200 rounded-xl p-4 bg-yellow-50">
-                                <h4 class="text-sm font-semibold text-yellow-800 mb-2 flex items-center gap-2">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    Wallet Binding Required
-                                </h4>
-                                <p class="text-xs text-yellow-700">Please add your BEP20 withdrawal wallet in <a href="{{ route('profile.edit') }}" class="underline font-semibold">profile settings</a> before submitting a deposit request.</p>
-                            </div>
                         @endif
 
                         <!-- Transaction Reference -->
@@ -127,7 +122,7 @@
                             <a href="{{ route('dashboard') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed" {{ $user->hasBoundWallet() ? '' : 'disabled' }}>
+                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Submit Deposit Request
                             </button>
                         </div>
@@ -181,13 +176,46 @@
         const copyBtn = document.querySelector('[data-wallet-copy]');
         const walletInput = document.querySelector('[data-wallet-value]');
         if (copyBtn && walletInput) {
+            const updateButtonState = (text, resetAfter = true) => {
+                copyBtn.textContent = text;
+                if (resetAfter) {
+                    setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+                }
+            };
+
+            const fallbackCopy = (value) => {
+                const temp = document.createElement('textarea');
+                temp.value = value;
+                temp.setAttribute('readonly', '');
+                temp.style.position = 'absolute';
+                temp.style.left = '-9999px';
+                document.body.appendChild(temp);
+                temp.select();
+                temp.setSelectionRange(0, temp.value.length);
+                const success = document.execCommand('copy');
+                document.body.removeChild(temp);
+                return success;
+            };
+
             copyBtn.addEventListener('click', async () => {
-                try {
-                    await navigator.clipboard.writeText(walletInput.value);
-                    copyBtn.textContent = 'Copied!';
-                    setTimeout(() => copyBtn.textContent = 'Copy', 1200);
-                } catch (e) {
-                    alert('Unable to copy. Please copy the address manually.');
+                const value = walletInput.value || '';
+                let copied = false;
+
+                if (navigator.clipboard?.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(value);
+                        copied = true;
+                    } catch {
+                        copied = fallbackCopy(value);
+                    }
+                } else {
+                    copied = fallbackCopy(value);
+                }
+
+                if (copied) {
+                    updateButtonState('Copied!');
+                } else {
+                    updateButtonState('Copy Failed', false);
                 }
             });
         }

@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/earnings', [DashboardController::class, 'earnings'])->name('earnings');
     Route::get('/referrals', [DashboardController::class, 'referrals'])->name('referrals');
     Route::get('/level', [DashboardController::class, 'level'])->name('level');
+    Route::post('/level/upgrade', [DashboardController::class, 'upgradeLevel'])->name('level.upgrade');
     Route::post('/tasks/channel-subscribe', [DashboardController::class, 'confirmChannelSubscription'])->name('tasks.channel-subscribe');
 });
 

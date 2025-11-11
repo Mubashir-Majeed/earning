@@ -11,8 +11,6 @@ use Carbon\Carbon;
 
 class VideoEarningService
 {
-    const POINTS_TO_DOLLAR_RATIO = 750 / 80; // 750 points = $80
-
     public function assignDailyTasks(User $user): void
     {
         if (!$user->canAccessTasks()) {
@@ -48,7 +46,6 @@ class VideoEarningService
                 'user_id' => $user->id,
                 'video_id' => $video->id,
                 'assigned_date' => $today,
-                'points_earned' => $video->points_value,
             ]);
         }
     }
@@ -81,8 +78,8 @@ class VideoEarningService
             'watch_duration' => $watchDuration,
         ]);
 
-        // Award points to user
-        $this->awardPoints($watch->user, $watch->video, $watch->video->points_value);
+        // Award dollars to user
+        $this->awardDollars($watch->user, $watch->video);
 
         // Mark video task as completed
         $this->markTaskCompleted($watch->user, $watch->video);
@@ -90,12 +87,11 @@ class VideoEarningService
         return true;
     }
 
-    protected function awardPoints(User $user, Video $video, int $points): void
+    protected function awardDollars(User $user, Video $video): void
     {
-        $dollarValue = $this->calculateDollarValue($points);
+        $dollarValue = (float) $video->dollar_value;
 
-        // Update user's points and balance
-        $user->increment('points', $points);
+        // Update user's balance directly
         $user->increment('balance', $dollarValue);
 
         // Find the video task
@@ -108,7 +104,6 @@ class VideoEarningService
         UserEarning::create([
             'user_id' => $user->id,
             'video_task_id' => $videoTask ? $videoTask->id : null,
-            'points_earned' => $points,
             'dollar_value' => $dollarValue,
             'type' => 'video_watch',
             'description' => "Earned from watching: {$video->title}",
@@ -127,7 +122,6 @@ class VideoEarningService
             $task->update([
                 'is_completed' => true,
                 'completed_at' => now(),
-                'points_earned' => $video->points_value,
             ]);
         } else {
             // Create task if it doesn't exist (for videos shown without pre-assignment)
@@ -137,14 +131,8 @@ class VideoEarningService
                 'assigned_date' => Carbon::today(),
                 'is_completed' => true,
                 'completed_at' => now(),
-                'points_earned' => $video->points_value,
             ]);
         }
-    }
-
-    public function calculateDollarValue(int $points): float
-    {
-        return round($points / self::POINTS_TO_DOLLAR_RATIO, 2);
     }
 
     public function getUserDailyTasks(User $user, Carbon $date = null): \Illuminate\Database\Eloquent\Collection
@@ -162,7 +150,6 @@ class VideoEarningService
     public function getUserStats(User $user): array
     {
         $totalEarnings = $user->earnings()->sum('dollar_value');
-        $totalPoints = $user->points;
         $totalVideosWatched = $user->videoWatches()->completed()->count();
         $todayEarnings = $user->earnings()
             ->where('earned_date', Carbon::today())
@@ -170,7 +157,6 @@ class VideoEarningService
 
         return [
             'total_earnings' => $totalEarnings,
-            'total_points' => $totalPoints,
             'total_videos_watched' => $totalVideosWatched,
             'today_earnings' => $todayEarnings,
             'balance' => $user->balance,

@@ -23,7 +23,6 @@ class User extends Authenticatable
         'email',
         'password',
         'balance',
-        'points',
         'has_deposited',
         'is_active',
         'level',
@@ -66,7 +65,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'balance' => 'decimal:2',
-            'points' => 'integer',
             'has_deposited' => 'boolean',
             'is_active' => 'boolean',
             'initial_deposit_amount' => 'decimal:2',
@@ -285,6 +283,76 @@ class User extends Authenticatable
     public function getTotalEarningsAttribute()
     {
         return $this->earnings()->sum('dollar_value');
+    }
+
+    /**
+     * Check if user meets Level 2 requirements
+     * Requirements:
+     * - Total referrals: 9
+     * - Wallet balance: >= 350
+     * - Pro package referrals: 4
+     * - Growth package referrals: 2
+     * - Starter package referrals: 3
+     */
+    public function meetsLevel2Requirements(): array
+    {
+        $referralCounts = $this->referralCountsByPackage();
+        $totalReferrals = $this->referrals()->where('has_deposited', true)->count();
+        
+        $requirements = [
+            'total_referrals' => [
+                'required' => 9,
+                'current' => $totalReferrals,
+                'met' => $totalReferrals >= 9,
+            ],
+            'wallet_balance' => [
+                'required' => 350,
+                'current' => (float) $this->balance,
+                'met' => (float) $this->balance >= 350,
+            ],
+            'pro_referrals' => [
+                'required' => 4,
+                'current' => $referralCounts['pro_100'] ?? 0,
+                'met' => ($referralCounts['pro_100'] ?? 0) >= 4,
+            ],
+            'growth_referrals' => [
+                'required' => 2,
+                'current' => $referralCounts['growth_50'] ?? 0,
+                'met' => ($referralCounts['growth_50'] ?? 0) >= 2,
+            ],
+            'starter_referrals' => [
+                'required' => 3,
+                'current' => $referralCounts['starter_35'] ?? 0,
+                'met' => ($referralCounts['starter_35'] ?? 0) >= 3,
+            ],
+        ];
+
+        $allMet = collect($requirements)->every(fn($req) => $req['met']);
+
+        return [
+            'requirements' => $requirements,
+            'all_met' => $allMet,
+            'can_upgrade' => $allMet && $this->level === 'level_1',
+        ];
+    }
+
+    /**
+     * Upgrade user to Level 2 if requirements are met
+     */
+    public function upgradeToLevel2(): bool
+    {
+        if ($this->level !== 'level_1') {
+            return false;
+        }
+
+        $requirements = $this->meetsLevel2Requirements();
+        
+        if ($requirements['all_met']) {
+            $this->update(['level' => 'level_2']);
+            return true;
+        }
+
+        return false;
     }
 
     public function canWithdraw(): bool

@@ -143,7 +143,6 @@
                             <th class="pb-2">Deposited</th>
                             <th class="pb-2">Withdrawn</th>
                             <th class="pb-2">Balance</th>
-                            <th class="pb-2">Points</th>
                             <th class="pb-2">Joined</th>
                         </tr>
                     </thead>
@@ -165,7 +164,6 @@
                                 <td class="py-3">${{ number_format($detail['total_deposited'], 2) }}</td>
                                 <td class="py-3">${{ number_format($detail['total_withdrawn'], 2) }}</td>
                                 <td class="py-3">${{ number_format($detail['balance'] ?? 0, 2) }}</td>
-                                <td class="py-3">{{ number_format($detail['points'] ?? 0) }}</td>
                                 <td class="py-3 text-xs text-gray-500">{{ optional($detail['joined_at'])->format('M d, Y') }}</td>
                             </tr>
                         @endforeach

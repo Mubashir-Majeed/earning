@@ -7,7 +7,7 @@
 <div class="space-y-6">
     <div class="bg-white rounded-xl shadow p-6">
         <h2 class="text-xl font-bold mb-2">{{ $video->title }}</h2>
-        <p class="text-sm text-gray-600 mb-4">Category: {{ $video->category }} • Points: {{ $video->points_value }}</p>
+        <p class="text-sm text-gray-600 mb-4">Category: {{ $video->category }} • Earnings: ${{ number_format($video->dollar_value, 2) }}</p>
         <a href="{{ $video->youtube_url }}" target="_blank" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-external-link-alt mr-2"></i>Open on YouTube</a>
     </div>
 

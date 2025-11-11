@@ -97,7 +97,6 @@
                             <ul class="text-sm text-gray-600 space-y-2">
                                 <li><span class="font-medium text-gray-800">Joined:</span> {{ optional($referrer->created_at)->format('M d, Y') }}</li>
                                 <li><span class="font-medium text-gray-800">Total Balance:</span> ${{ number_format($referrer->balance, 2) }}</li>
-                                <li><span class="font-medium text-gray-800">Points:</span> {{ number_format($referrer->points ?? 0) }}</li>
                                 <li><span class="font-medium text-gray-800">Referral Link:</span> <span class="font-mono text-xs break-all">{{ route('register', ['ref' => $referrer->referral_code]) }}</span></li>
                             </ul>
                         </div>

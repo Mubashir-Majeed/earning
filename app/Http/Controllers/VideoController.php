@@ -42,7 +42,7 @@ class VideoController extends Controller
             return (object) [
                 'video' => $video,
                 'is_completed' => $completedTask ? true : false,
-                'points_earned' => $video->points_value,
+                'dollar_value' => $video->dollar_value,
                 'assigned_date' => Carbon::today(),
             ];
         });
@@ -74,7 +74,7 @@ class VideoController extends Controller
             $task = (object) [
                 'video_id' => $video->id,
                 'is_completed' => false,
-                'points_earned' => $video->points_value,
+                'dollar_value' => $video->dollar_value,
                 'assigned_date' => Carbon::today(),
             ];
         }
@@ -155,7 +155,7 @@ class VideoController extends Controller
         if ($watchDuration < $requiredDuration) {
             return response()->json([
                 'error' => 'Insufficient watch time',
-                'message' => "You need to watch at least {$requiredDuration} seconds to earn points. You watched {$watchDuration} seconds."
+                'message' => "You need to watch at least {$requiredDuration} seconds to earn. You watched {$watchDuration} seconds."
             ], 400);
         }
 
@@ -178,8 +178,7 @@ class VideoController extends Controller
         if ($completed) {
             return response()->json([
                 'success' => true,
-                'points_earned' => $video->points_value,
-                'dollar_value' => $this->videoEarningService->calculateDollarValue($video->points_value),
+                'dollar_value' => (float) $video->dollar_value,
                 'watch_duration' => $watchDuration,
                 'required_duration' => $requiredDuration
             ]);

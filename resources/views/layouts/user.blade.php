@@ -255,10 +255,6 @@
                             <p class="text-sm text-slate-500">Total Earnings</p>
                             <p class="text-lg font-semibold text-blue-600">@yield('quick-earnings', '—')</p>
                         </div>
-                        <div class="text-center">
-                            <p class="text-sm text-slate-500">Points</p>
-                            <p class="text-lg font-semibold text-purple-500">@yield('quick-points', '—')</p>
-                        </div>
                     </div>
                 </div>
             </div>

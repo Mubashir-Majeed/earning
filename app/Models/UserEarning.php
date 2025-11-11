@@ -12,7 +12,6 @@ class UserEarning extends Model
     protected $fillable = [
         'user_id',
         'video_task_id',
-        'points_earned',
         'dollar_value',
         'type',
         'description',
@@ -22,7 +21,6 @@ class UserEarning extends Model
     protected function casts(): array
     {
         return [
-            'points_earned' => 'integer',
             'dollar_value' => 'decimal:2',
             'earned_date' => 'date',
         ];

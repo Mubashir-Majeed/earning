@@ -105,7 +105,7 @@
                         </div>
                         <div class="flex items-center">
                             <i class="fas fa-coins mr-1"></i>
-                            <span class="font-medium text-green-600">{{ $video->points_value }} points</span>
+                            <span class="font-medium text-green-600">${{ number_format($video->dollar_value, 2) }}</span>
                         </div>
                     </div>
 
@@ -179,8 +179,8 @@
         <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Total Points Available</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($videos->sum('points_value')) }}</p>
+                    <p class="text-sm font-medium text-gray-600">Total Dollars Available</p>
+                    <p class="text-2xl font-bold text-gray-900">${{ number_format($videos->sum('dollar_value'), 2) }}</p>
                 </div>
                 <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
                     <i class="fas fa-coins text-yellow-600 text-xl"></i>
@@ -191,8 +191,8 @@
         <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Avg Points/Video</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ number_format($videos->avg('points_value'), 1) }}</p>
+                    <p class="text-sm font-medium text-gray-600">Avg Dollars/Video</p>
+                    <p class="text-2xl font-bold text-gray-900">${{ number_format($videos->avg('dollar_value'), 2) }}</p>
                 </div>
                 <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                     <i class="fas fa-chart-line text-blue-600 text-xl"></i>

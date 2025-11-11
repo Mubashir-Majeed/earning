@@ -147,7 +147,7 @@
                         </div>
                         <div>
                             <p class="font-medium text-gray-900">Video Completed</p>
-                            <p class="text-sm text-gray-600">User earned 50 points</p>
+                            <p class="text-sm text-gray-600">User earned $0.50</p>
                         </div>
                     </div>
                     <span class="text-sm text-gray-500">10 min ago</span>

@@ -8,7 +8,6 @@
 @endphp
 @section('quick-videos', $actualReferralsCount)
 @section('quick-earnings', '$' . number_format($actualReferralsCount * 5, 2))
-@section('quick-points', $actualReferralsCount * 100)
 
 @section('content')
     <!-- Referral Stats -->
@@ -39,18 +38,6 @@
             </div>
         </div>
 
-        <!-- Referral Points -->
-        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-600 mb-1">Referral Points</p>
-                    <p class="text-3xl font-bold text-gray-900">{{ $actualReferralsCount * 100 }}</p>
-                </div>
-                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-star text-purple-600 text-xl"></i>
-                </div>
-            </div>
-        </div>
     </div>
 
     @php
@@ -160,7 +147,7 @@
             </div>
             <div class="flex items-center">
                 <i class="fas fa-check-circle text-green-300 mr-3"></i>
-                <span class="text-sm">They get 100 bonus points</span>
+                <span class="text-sm">They get $0.10 bonus</span>
             </div>
             <div class="flex items-center">
                 <i class="fas fa-check-circle text-green-300 mr-3"></i>

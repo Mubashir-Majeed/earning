@@ -51,9 +51,8 @@ class RegisteredUserController extends Controller
             'level' => 1, // Default to level 1
         ]);
 
-        // Award bonus points to new user if they have a referrer
+        // Award bonus to new user if they have a referrer
         if ($referrer) {
-            $user->increment('points', 100); // 100 bonus points for using referral
             $user->increment('balance', 0.10); // $0.10 bonus
         }
 

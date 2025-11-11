@@ -15,7 +15,6 @@ class VideoTask extends Model
         'assigned_date',
         'is_completed',
         'completed_at',
-        'points_earned',
     ];
 
     protected function casts(): array
@@ -24,7 +23,6 @@ class VideoTask extends Model
             'assigned_date' => 'date',
             'is_completed' => 'boolean',
             'completed_at' => 'datetime',
-            'points_earned' => 'integer',
         ];
     }
 
