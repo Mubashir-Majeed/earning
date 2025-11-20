@@ -16,6 +16,11 @@ class FixVideoIds extends Command
         $updated = 0;
         
         foreach ($videos as $video) {
+            if ($video->platform !== Video::PLATFORM_YOUTUBE) {
+                $this->line("Skipping video {$video->id} ({$video->title}) - platform {$video->platform}.");
+                continue;
+            }
+
             $correctId = Video::extractYoutubeId($video->youtube_url);
             
             if ($correctId && $video->youtube_id !== $correctId) {

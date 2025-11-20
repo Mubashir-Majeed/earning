@@ -129,12 +129,35 @@ class DashboardController extends Controller
             ->paginate(20);
         
         // Get monthly earnings data for chart (sum dollar_value column)
-        $monthlyEarnings = $user->earnings()
-            ->selectRaw('DATE_FORMAT(earned_date, "%Y-%m") as month, SUM(dollar_value) as total')
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
-            ->limit(12)
+        // Database-agnostic approach using Carbon
+        $earningsData = $user->earnings()
+            ->select('earned_date', 'dollar_value')
+            ->orderBy('earned_date', 'desc')
             ->get();
+        
+        // Group by month using Carbon
+        $earningsByMonth = $earningsData->groupBy(function($item) {
+            return Carbon::parse($item->earned_date)->format('Y-m');
+        })->map(function($group, $month) {
+            return [
+                'month' => $month,
+                'total' => (float) $group->sum('dollar_value')
+            ];
+        });
+        
+        // Generate last 12 months with zero values for missing months
+        $monthlyEarnings = collect();
+        $startDate = Carbon::now()->subMonths(11)->startOfMonth();
+        
+        for ($i = 0; $i < 12; $i++) {
+            $monthKey = $startDate->copy()->addMonths($i)->format('Y-m');
+            $monthlyEarnings->push([
+                'month' => $monthKey,
+                'total' => $earningsByMonth->has($monthKey) 
+                    ? (float) $earningsByMonth[$monthKey]['total'] 
+                    : 0.0
+            ]);
+        }
 
         return view('earnings', compact('user', 'stats', 'earnings', 'monthlyEarnings'));
     }

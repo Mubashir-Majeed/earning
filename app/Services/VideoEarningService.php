@@ -89,7 +89,7 @@ class VideoEarningService
 
     protected function awardDollars(User $user, Video $video): void
     {
-        $dollarValue = (float) $video->dollar_value;
+        $dollarValue = $video->dollarValueForUser($user);
 
         // Update user's balance directly
         $user->increment('balance', $dollarValue);

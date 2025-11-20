@@ -7,8 +7,13 @@
 <div class="space-y-6">
     <div class="bg-white rounded-xl shadow p-6">
         <h2 class="text-xl font-bold mb-2">{{ $video->title }}</h2>
-        <p class="text-sm text-gray-600 mb-4">Category: {{ $video->category }} • Earnings: ${{ number_format($video->dollar_value, 2) }}</p>
-        <a href="{{ $video->youtube_url }}" target="_blank" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-external-link-alt mr-2"></i>Open on YouTube</a>
+        <p class="text-sm text-gray-600 mb-2">Category: {{ $video->category }} • Default Earnings: ${{ number_format($video->dollar_value, 2) }}</p>
+        <p class="text-xs text-gray-500 mb-4">
+            Starter: ${{ number_format($video->dollar_value_starter ?? $video->dollar_value, 2) }} •
+            Growth: ${{ number_format($video->dollar_value_growth ?? $video->dollar_value, 2) }} •
+            Pro: ${{ number_format($video->dollar_value_pro ?? $video->dollar_value, 2) }}
+        </p>
+        <a href="{{ $video->youtube_url }}" target="_blank" class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg"><i class="fas fa-external-link-alt mr-2"></i>Open Source Link</a>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

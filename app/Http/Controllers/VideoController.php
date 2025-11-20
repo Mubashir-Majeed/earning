@@ -32,6 +32,7 @@ class VideoController extends Controller
 
         // Create virtual tasks for display purposes
         $todayTasks = $videos->map(function($video) use ($user) {
+            $dollarValue = $video->dollarValueForUser($user);
             // Check if user has completed this video today
             $completedTask = $user->videoTasks()
                 ->where('video_id', $video->id)
@@ -42,7 +43,7 @@ class VideoController extends Controller
             return (object) [
                 'video' => $video,
                 'is_completed' => $completedTask ? true : false,
-                'dollar_value' => $video->dollar_value,
+                'dollar_value' => $dollarValue,
                 'assigned_date' => Carbon::today(),
             ];
         });
@@ -70,11 +71,15 @@ class VideoController extends Controller
             ->first();
 
         // Create virtual task if not exists
-        if (!$task) {
+        $taskDollarValue = $video->dollarValueForUser($user);
+
+        if ($task) {
+            $task->dollar_value = $taskDollarValue;
+        } else {
             $task = (object) [
                 'video_id' => $video->id,
                 'is_completed' => false,
-                'dollar_value' => $video->dollar_value,
+                'dollar_value' => $taskDollarValue,
                 'assigned_date' => Carbon::today(),
             ];
         }
@@ -178,7 +183,7 @@ class VideoController extends Controller
         if ($completed) {
             return response()->json([
                 'success' => true,
-                'dollar_value' => (float) $video->dollar_value,
+                'dollar_value' => $video->dollarValueForUser($user),
                 'watch_duration' => $watchDuration,
                 'required_duration' => $requiredDuration
             ]);

@@ -9,16 +9,31 @@
                 <div class="p-6">
                     <!-- Video Player -->
                     <div class="mb-6">
+                        @php
+                            $isTikTok = $video->platform === \App\Models\Video::PLATFORM_TIKTOK;
+                            $embedUrl = $isTikTok ? $video->tiktok_embed_url : $video->youtube_embed_url;
+                        @endphp
                         <div class="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
-                            @if($video->youtube_embed_url)
-                                <iframe 
-                                    id="youtube-player"
-                                    src="{{ $video->youtube_embed_url }}&enablejsapi=1&controls=0&showinfo=0&rel=0&modestbranding=1" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowfullscreen
-                                    class="w-full h-full">
-                                </iframe>
+                            @if($embedUrl)
+                                @if($isTikTok)
+                                    <iframe
+                                        id="tiktok-player"
+                                        src="{{ $embedUrl }}"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen
+                                        class="w-full h-full">
+                                    </iframe>
+                                @else
+                                    <iframe 
+                                        id="youtube-player"
+                                        src="{{ $embedUrl }}&enablejsapi=1&controls=0&showinfo=0&rel=0&modestbranding=1" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen
+                                        class="w-full h-full">
+                                    </iframe>
+                                @endif
                                 <!-- Custom overlay to control video -->
                                 <div id="video-overlay" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                                     <div class="text-center text-white">
@@ -30,7 +45,7 @@
                                         <h3 class="text-xl font-bold mb-2">{{ $video->title }}</h3>
                                         <p class="text-sm text-gray-300 mb-4">Click "Start Watching" below to begin</p>
                                         <div class="text-xs text-gray-400">
-                                            Duration: {{ $video->formatted_duration }} | Earnings: ${{ number_format($video->dollar_value, 2) }}
+                                            Duration: {{ $video->formatted_duration }} | Earnings: ${{ number_format($task->dollar_value ?? $video->dollar_value, 2) }}
                                         </div>
                                     </div>
                                 </div>
@@ -47,7 +62,7 @@
                                                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                                                     <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                                                 </svg>
-                                                Watch on YouTube
+                                                Open Video
                                             </a>
                                         @endif
                                     </div>
@@ -145,7 +160,9 @@
 @endsection
 
 @section('scripts')
-    <script src="https://www.youtube.com/iframe_api"></script>
+    @if($video->isYouTube())
+        <script src="https://www.youtube.com/iframe_api"></script>
+    @endif
     <script>
         let player;
         let watchId = null;
@@ -155,7 +172,7 @@
         let progressInterval = null;
         let currentWatchTime = 0;
         let watchStartTime = null;
-        
+        @if($video->isYouTube())
         // YouTube API ready
         function onYouTubeIframeAPIReady() {
             console.log('YouTube API ready');
@@ -189,6 +206,7 @@
                 }
             }
         }
+        @endif
         
         // Wait for page to load
         window.onload = function() {
@@ -366,7 +384,7 @@
                                     </div>
                                 </div>
                                 <p class="mt-2 text-xs text-blue-700">
-                                    Watch ${requiredWatchTime} seconds to earn ${{ number_format($video->dollar_value, 2) }}
+                                    Watch ${requiredWatchTime} seconds to earn ${{ number_format($task->dollar_value ?? $video->dollar_value, 2) }}
                                 </p>
                             </div>
                         </div>

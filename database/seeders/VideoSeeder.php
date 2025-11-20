@@ -128,6 +128,10 @@ class VideoSeeder extends Seeder
         ];
 
         foreach ($videos as $videoData) {
+            $baseValue = $videoData['dollar_value'] ?? 0.10;
+            $videoData['dollar_value_starter'] = $videoData['dollar_value_starter'] ?? $baseValue;
+            $videoData['dollar_value_growth'] = $videoData['dollar_value_growth'] ?? $baseValue;
+            $videoData['dollar_value_pro'] = $videoData['dollar_value_pro'] ?? $baseValue;
             Video::create($videoData);
         }
     }

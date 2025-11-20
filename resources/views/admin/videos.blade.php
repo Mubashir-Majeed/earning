@@ -109,6 +109,21 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-3 gap-2 text-xs text-gray-600 mb-4">
+                        <div class="p-2 bg-gray-50 rounded-lg text-center">
+                            <p class="font-semibold text-gray-800">${{ number_format($video->dollar_value_starter ?? $video->dollar_value, 2) }}</p>
+                            <p class="uppercase tracking-wide text-[10px] text-gray-500">Starter</p>
+                        </div>
+                        <div class="p-2 bg-gray-50 rounded-lg text-center">
+                            <p class="font-semibold text-gray-800">${{ number_format($video->dollar_value_growth ?? $video->dollar_value, 2) }}</p>
+                            <p class="uppercase tracking-wide text-[10px] text-gray-500">Growth</p>
+                        </div>
+                        <div class="p-2 bg-gray-50 rounded-lg text-center">
+                            <p class="font-semibold text-gray-800">${{ number_format($video->dollar_value_pro ?? $video->dollar_value, 2) }}</p>
+                            <p class="uppercase tracking-wide text-[10px] text-gray-500">Pro</p>
+                        </div>
+                    </div>
+
                     <!-- Video Stats -->
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div class="text-center p-3 bg-gray-50 rounded-lg">

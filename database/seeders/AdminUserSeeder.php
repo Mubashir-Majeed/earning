@@ -52,7 +52,6 @@ class AdminUserSeeder extends Seeder
                 'password' => Hash::make('admin123'),
                 'email_verified_at' => now(),
                 'balance' => 0.00,
-                'points' => 0,
                 'has_deposited' => true,
                 'is_active' => true,
                 'phone' => '+1234567890',

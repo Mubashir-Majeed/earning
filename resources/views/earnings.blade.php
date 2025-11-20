@@ -83,14 +83,28 @@
             <!-- Earnings Chart -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                 <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold text-gray-900">Earnings Trend</h3>
-                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-chart-line text-blue-600"></i>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Earnings Trend</h3>
+                        <p class="text-sm text-gray-500 mt-1">Your monthly earnings over time</p>
+                    </div>
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                        <i class="fas fa-chart-line text-white"></i>
                     </div>
                 </div>
                 
-                <div class="h-80">
+                <div class="h-80 relative">
                     <canvas id="earningsChart"></canvas>
+                    @if($monthlyEarnings->isEmpty())
+                    <div class="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-lg">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-chart-line text-gray-400 text-2xl"></i>
+                            </div>
+                            <p class="text-gray-500 font-medium">No earnings data yet</p>
+                            <p class="text-sm text-gray-400 mt-1">Start watching videos to see your earnings trend</p>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -174,51 +188,134 @@
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // Earnings Chart
-        const ctx = document.getElementById('earningsChart').getContext('2d');
-        const monthlyData = @json($monthlyEarnings);
-        
-        const labels = monthlyData.map(item => {
-            const date = new Date(item.month + '-01');
-            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        }).reverse();
-        
-        const data = monthlyData.map(item => parseFloat(item.total)).reverse();
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Monthly Earnings',
-                    data: data,
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('earningsChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const monthlyData = @json($monthlyEarnings);
+            
+            // Handle empty data
+            if (!monthlyData || monthlyData.length === 0) {
+                return;
+            }
+            
+            // Process data - data is already in chronological order from backend
+            const labels = monthlyData.map(item => {
+                const date = new Date(item.month + '-01');
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            });
+            
+            const data = monthlyData.map(item => parseFloat(item.total || 0));
+            
+            // Calculate max value for better Y-axis scaling
+            const maxValue = Math.max(...data, 0);
+            // Ensure minimum height for better visualization
+            const yAxisMax = maxValue > 0 ? Math.max(Math.ceil(maxValue * 1.3), 5) : 10;
+            
+            // Ensure at least some visual separation even with small values
+            const minStep = maxValue > 0 && maxValue < 1 ? 0.5 : 1;
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Monthly Earnings',
+                        data: data,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: 'rgb(37, 99, 235)',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 3
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '$' + value.toFixed(2);
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            right: 15,
+                            bottom: 10,
+                            left: 10
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Earnings: $' + parseFloat(context.parsed.y).toFixed(2);
+                                }
                             }
                         }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: {
+                                    size: 11
+                                },
+                                autoSkip: false,
+                                maxTicksLimit: 12
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: yAxisMax,
+                            min: 0,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: {
+                                    size: 11
+                                },
+                                stepSize: maxValue > 0 && maxValue < 1 ? 0.5 : (maxValue > 0 ? Math.ceil(maxValue / 5) : 1),
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
                     }
                 }
-            }
+            });
         });
     </script>
 @endsection

@@ -189,7 +189,7 @@ class AdminController extends Controller
     {
         $this->checkAdminRole();
         
-        // Custom validation for YouTube URL
+        // Custom validation for supported video URLs
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -197,10 +197,10 @@ class AdminController extends Controller
                 'required',
                 'url',
                 function ($attribute, $value, $fail) {
-                    // Check if it's a valid YouTube URL
-                    $youtubeId = Video::extractYoutubeId($value);
-                    if (!$youtubeId) {
-                        $fail('The YouTube URL must be a valid YouTube video URL (youtube.com/watch?v=... or youtu.be/...).');
+                    // Check if it's a supported video URL
+                    $source = Video::detectVideoSource($value);
+                    if (!$source) {
+                        $fail('The video URL must be a valid YouTube (watch/shorts) or TikTok link.');
                     }
                 },
             ],
@@ -210,6 +210,9 @@ class AdminController extends Controller
             'thumbnail' => 'nullable|image|max:2048',
             'duration' => 'required|integer|min:1',
             'dollar_value' => 'required|numeric|min:0.01',
+            'dollar_value_starter' => 'nullable|numeric|min:0.01',
+            'dollar_value_growth' => 'nullable|numeric|min:0.01',
+            'dollar_value_pro' => 'nullable|numeric|min:0.01',
             'assigned_date' => 'nullable|date',
             'max_watches_per_day' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
@@ -217,20 +220,30 @@ class AdminController extends Controller
 
         $validated = $request->only([
             'title', 'description', 'youtube_url', 'youtube_id', 'category',
-            'thumbnail_url', 'duration', 'dollar_value', 'assigned_date',
+            'thumbnail_url', 'duration', 'dollar_value',
+            'dollar_value_starter', 'dollar_value_growth', 'dollar_value_pro',
+            'assigned_date',
             'max_watches_per_day', 'is_active'
         ]);
 
-        // Automatically extract youtube_id from youtube_url if not provided
-        if (empty($validated['youtube_id'])) {
-            $validated['youtube_id'] = Video::extractYoutubeId($validated['youtube_url']);
+        // Detect platform & extract ID from URL
+        $source = Video::detectVideoSource($validated['youtube_url']);
+        if ($source) {
+            $validated['platform'] = $source['platform'];
+            if (empty($validated['youtube_id'])) {
+                $validated['youtube_id'] = $source['video_id'];
+            }
         }
+
+        $validated['dollar_value_starter'] = $validated['dollar_value_starter'] ?? $validated['dollar_value'];
+        $validated['dollar_value_growth'] = $validated['dollar_value_growth'] ?? $validated['dollar_value'];
+        $validated['dollar_value_pro'] = $validated['dollar_value_pro'] ?? $validated['dollar_value'];
 
         // Validate that youtube_id was successfully extracted
         if (empty($validated['youtube_id'])) {
             return back()
                 ->withInput()
-                ->withErrors(['youtube_url' => 'Could not extract YouTube video ID from the provided URL. Please check the URL format.']);
+                ->withErrors(['youtube_url' => 'Could not extract a video ID from the provided URL. Please check the URL format.']);
         }
 
         // If a file thumbnail is uploaded, store it and override thumbnail_url
