@@ -6,20 +6,20 @@
 @section('quick-earnings', '$' . number_format($stats['total_earnings'], 2))
 
 @section('content')
-    <div class="space-y-8">
-        <section class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-2xl text-white">
+    <div class="space-y-8 max-w-full overflow-x-hidden">
+        <section class="relative overflow-hidden rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-2xl text-white max-w-full">
             <div class="absolute inset-0 opacity-10">
                 <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.1"><circle cx="30" cy="30" r="2"/></g></svg>');"></div>
             </div>
-            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-                <div class="flex items-start gap-5">
-                    <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <i class="fas fa-user-circle text-4xl text-white drop-shadow-lg"></i>
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6 lg:gap-8">
+                <div class="flex items-start gap-3 sm:gap-4 lg:gap-5 min-w-0 flex-1">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user-circle text-2xl sm:text-3xl lg:text-4xl text-white drop-shadow-lg"></i>
                     </div>
-                    <div>
-                        <p class="text-sm uppercase tracking-[0.35em] text-blue-100">Welcome back</p>
-                        <h2 class="text-4xl font-black leading-tight">{{ $user->name }}</h2>
-                        <p class="text-lg text-blue-100 max-w-2xl mt-3">Here’s your earning overview and today’s key tasks. Keep watching videos, completing referrals, and finish the checklist to unlock withdrawals.</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm uppercase tracking-[0.35em] text-blue-100">Welcome back</p>
+                        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight break-words">{{ $user->name }}</h2>
+                        <p class="text-sm sm:text-base lg:text-lg text-blue-100 max-w-2xl mt-2 sm:mt-3 break-words">Here's your earning overview and today's key tasks. Keep watching videos, completing referrals, and finish the checklist to unlock withdrawals.</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full sm:w-auto">
@@ -35,7 +35,7 @@
             </div>
         </section>
 
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-full">
             <div class="bg-white/90 backdrop-blur rounded-2xl border border-white/40 shadow-xl p-6">
                 <div class="flex items-center justify-between">
                     <div>
@@ -119,16 +119,16 @@
                 </div>
             </section>
         @else
-            <section class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 text-white shadow-2xl">
+            <section class="relative overflow-hidden rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 text-white shadow-2xl max-w-full">
                 <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div class="flex items-start gap-5">
                         <div class="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur flex items-center justify-center">
                             <i class="fas fa-trophy text-4xl"></i>
                         </div>
                         <div>
-                            <h3 class="text-3xl font-black">Great Job Today!</h3>
-                            <p class="text-lg text-emerald-100">You’re on the {{ $package['name'] ?? 'Earn Quest' }} package @if($package) ( ${{ number_format($package['deposit_amount'], 2) }} deposit • ${{ number_format($package['withdrawal_cap'], 2) }} cap ) @endif.</p>
-                            <p class="text-lg text-white/80 mt-2">Today’s earnings: ${{ number_format($stats['today_earnings'], 2) }}. Keep watching videos to earn even more!</p>
+                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black break-words">Great Job Today!</h3>
+                            <p class="text-sm sm:text-base lg:text-lg text-emerald-100 break-words">You're on the {{ $package['name'] ?? 'Earn Quest' }} package @if($package) ( ${{ number_format($package['deposit_amount'], 2) }} deposit ) @endif.</p>
+                            <p class="text-sm sm:text-base lg:text-lg text-white/80 mt-2 break-words">Today's earnings: ${{ number_format($stats['today_earnings'], 2) }}. Keep watching videos to earn even more!</p>
                         </div>
                     </div>
                 </div>
@@ -140,13 +140,13 @@
                 $req = $level2Status['requirements'];
                 $canUpgrade = $level2Status['can_upgrade'];
             @endphp
-            <section class="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-600 text-white shadow-2xl">
+            <section class="relative overflow-hidden rounded-3xl p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-600 text-white shadow-2xl max-w-full">
                 <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,<svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.25"><circle cx="22" cy="22" r="2"/></g></svg>');"></div>
                 <div class="relative z-10 space-y-6">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
-                            <h3 class="text-3xl font-black">Upgrade to Level 2</h3>
-                            <p class="text-lg text-purple-100 mt-2">Unlock more daily videos, higher withdrawal limits, and better rewards!</p>
+                            <h3 class="text-xl sm:text-2xl lg:text-3xl font-black break-words">Upgrade to Level 2</h3>
+                            <p class="text-sm sm:text-base lg:text-lg text-purple-100 mt-2 break-words">Unlock more daily videos, higher withdrawal limits, and better rewards!</p>
                         </div>
                         @if($canUpgrade)
                             <form method="POST" action="{{ route('level.upgrade') }}" class="inline-block">
@@ -160,7 +160,7 @@
                         @endif
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mt-4 sm:mt-6 max-w-full">
                         <div class="bg-white/15 backdrop-blur rounded-xl p-4 border border-white/20">
                             <div class="flex items-center justify-between mb-2">
                                 <p class="text-xs uppercase tracking-widest text-purple-100">Total Referrals</p>

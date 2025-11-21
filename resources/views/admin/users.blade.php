@@ -4,9 +4,6 @@
 @section('page-title', 'Users Management')
 
 @section('content')
-@php
-    $packageCatalog = config('investment.packages');
-@endphp
 
 <div class="space-y-6">
     <!-- Header Actions -->
@@ -26,35 +23,55 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <form method="GET" action="{{ route('admin.users') }}" class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
-                <input type="text" placeholder="Search by name or email..." 
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name or email..." 
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Users</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="verified">Verified</option>
-                    <option value="unverified">Unverified</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Package</label>
+                <select name="package" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Packages</option>
+                    @foreach($packageCatalog as $code => $pkg)
+                        <option value="{{ $code }}" {{ request('package') === $code ? 'selected' : '' }}>
+                            {{ $pkg['name'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Deposit Status</label>
+                <select name="deposit_status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All</option>
+                    <option value="deposited" {{ request('deposit_status') === 'deposited' ? 'selected' : '' }}>Has Deposited</option>
+                    <option value="no_deposit" {{ request('deposit_status') === 'no_deposit' ? 'selected' : '' }}>No Deposit</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
-                <input type="date" 
+                <input type="date" name="date" value="{{ request('date') }}"
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
-            <div class="flex items-end">
-                <button class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+            <div class="flex items-end gap-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                     <i class="fas fa-search mr-2"></i>Filter
                 </button>
+                <a href="{{ route('admin.users') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-redo"></i>
+                </a>
             </div>
         </div>
-    </div>
+    </form>
 
     <!-- Users Table -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">

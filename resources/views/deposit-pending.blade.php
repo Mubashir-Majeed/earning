@@ -4,7 +4,6 @@
 @section('page-title', 'Deposit Pending Review')
 
 @php
-    use Illuminate\Support\Facades\Storage;
     use Illuminate\Support\Str;
     $packageConfig = $pendingDeposit->package_code ? ($packages[$pendingDeposit->package_code] ?? null) : null;
     $reference = $pendingDeposit->payment_id;
@@ -63,9 +62,12 @@
                             Payment Proof
                         </h3>
                         <p class="text-xs text-blue-700 mb-3">
-                            We received your upload. You can view the file below while it’s under review.
+                            We received your upload. You can view the file below while it's under review.
                         </p>
-                        <a href="{{ Storage::disk('public')->url($pendingDeposit->receipt_path) }}"
+                        @php
+                            $receiptUrl = asset('storage/' . ltrim($pendingDeposit->receipt_path, '/'));
+                        @endphp
+                        <a href="{{ $receiptUrl }}"
                            target="_blank"
                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
                             <i class="fas fa-eye mr-2"></i> View Uploaded Receipt

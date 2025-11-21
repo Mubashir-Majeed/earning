@@ -59,11 +59,11 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('stats', 'recentUsers', 'recentWithdrawals'));
     }
 
-    public function users()
+    public function users(Request $request)
     {
         $this->checkAdminRole();
         
-        $users = User::withoutAdmins()
+        $query = User::withoutAdmins()
             ->with('roles')
             ->withSum([
                 'deposits as total_deposited_amount' => function ($query) {
@@ -74,9 +74,49 @@ class AdminController extends Controller
                 'withdrawals as total_withdrawn_amount' => function ($query) {
                     $query->where('status', 'completed');
                 },
-            ], 'amount')
-            ->paginate(20);
-        return view('admin.users', compact('users'));
+            ], 'amount');
+        
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Status filter
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+        
+        // Package filter
+        if ($request->filled('package')) {
+            $query->where('investment_package', $request->package);
+        }
+        
+        // Deposit status filter
+        if ($request->filled('deposit_status')) {
+            if ($request->deposit_status === 'deposited') {
+                $query->where('has_deposited', true);
+            } elseif ($request->deposit_status === 'no_deposit') {
+                $query->where('has_deposited', false);
+            }
+        }
+        
+        // Date filter
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+        
+        $users = $query->paginate(20)->withQueryString();
+        $packageCatalog = config('investment.packages', []);
+        
+        return view('admin.users', compact('users', 'packageCatalog'));
     }
 
     public function showUser(User $user)

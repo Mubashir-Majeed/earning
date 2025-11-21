@@ -84,24 +84,24 @@
 
         <!-- Navigation -->
         <nav class="relative z-10 bg-black/20 backdrop-blur-md border-b border-white/10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
+            <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+                <div class="flex justify-between items-center h-14 sm:h-16">
                     <div class="flex items-center">
-                        <a href="/" class="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
-                            <i class="fab fa-youtube text-red-500 mr-2"></i>Earn Quest
+                        <a href="/" class="text-lg sm:text-2xl font-bold bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
+                            <i class="fab fa-youtube text-red-500 mr-1 sm:mr-2"></i><span class="hidden sm:inline">Earn Quest</span><span class="sm:hidden">EQ</span>
                         </a>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="/" class="text-gray-300 hover:text-white px-4 py-2 text-sm font-medium transition-colors">
-                            <i class="fas fa-home mr-2"></i>Home
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <a href="/" class="text-gray-300 hover:text-white px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors">
+                            <i class="fas fa-home sm:mr-2"></i><span class="hidden sm:inline">Home</span>
                         </a>
                         @if (Route::currentRouteName() === 'login')
-                            <a href="{{ route('register') }}" class="bg-gradient-to-r from-yellow-400 to-red-500 text-black px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105">
-                                <i class="fas fa-user-plus mr-2"></i>Sign Up
+                            <a href="{{ route('register') }}" class="bg-gradient-to-r from-yellow-400 to-red-500 text-black px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-base font-semibold hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105">
+                                <i class="fas fa-user-plus sm:mr-2"></i><span class="hidden sm:inline">Sign Up</span>
                             </a>
                         @else
-                            <a href="{{ route('login') }}" class="bg-gradient-to-r from-yellow-400 to-red-500 text-black px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105">
-                                <i class="fas fa-sign-in-alt mr-2"></i>Login
+                            <a href="{{ route('login') }}" class="bg-gradient-to-r from-yellow-400 to-red-500 text-black px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-base font-semibold hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-105">
+                                <i class="fas fa-sign-in-alt sm:mr-2"></i><span class="hidden sm:inline">Login</span>
                             </a>
                         @endif
                     </div>
@@ -110,22 +110,22 @@
         </nav>
 
         <!-- Main Content -->
-        <div class="relative z-10 flex flex-col justify-center items-center min-h-screen pt-20 pb-8 px-4 sm:px-6 lg:px-8">
+        <div class="relative z-10 flex flex-col justify-center items-center min-h-screen pt-16 sm:pt-20 pb-6 sm:pb-8 px-4 sm:px-6 lg:px-8">
             <div class="w-full max-w-md">
-                <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/20 shadow-2xl" data-aos="fade-up" data-aos-duration="1000">
+                <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-white/20 shadow-2xl" data-aos="fade-up" data-aos-duration="1000">
                     <!-- Header -->
-                    <div class="text-center mb-8">
-                        <div class="w-16 h-16 bg-gradient-to-r from-yellow-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-110 floating-animation">
+                    <div class="text-center mb-6 sm:mb-8">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-yellow-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-110 floating-animation">
                             @if (Route::currentRouteName() === 'login')
-                                <i class="fas fa-sign-in-alt text-black text-2xl"></i>
+                                <i class="fas fa-sign-in-alt text-black text-xl sm:text-2xl"></i>
                             @else
-                                <i class="fas fa-user-plus text-black text-2xl"></i>
+                                <i class="fas fa-user-plus text-black text-xl sm:text-2xl"></i>
                             @endif
                         </div>
-                        <h1 class="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
+                        <h1 class="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
                             @yield('title', 'Welcome Back')
                         </h1>
-                        <p class="text-gray-300">
+                        <p class="text-sm sm:text-base text-gray-300">
                             @yield('subtitle', 'Access your account to start earning')
                         </p>
                     </div>
@@ -134,12 +134,12 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="text-center mt-8">
-                    <p class="text-gray-400 text-sm">
+                <div class="text-center mt-6 sm:mt-8">
+                    <p class="text-gray-400 text-xs sm:text-sm leading-relaxed">
                         By continuing, you agree to our 
-                        <a href="#" class="text-yellow-400 hover:text-yellow-300 transition-colors">Terms of Service</a> 
+                        <a href="{{ route('terms') }}" class="text-yellow-400 hover:text-yellow-300 transition-colors">Terms of Service</a> 
                         and 
-                        <a href="#" class="text-yellow-400 hover:text-yellow-300 transition-colors">Privacy Policy</a>
+                        <a href="{{ route('privacy') }}" class="text-yellow-400 hover:text-yellow-300 transition-colors">Privacy Policy</a>
                     </p>
                 </div>
             </div>

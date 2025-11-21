@@ -16,6 +16,8 @@
             background: linear-gradient(120deg, #e0e7ff 0%, #f1f5f9 40%, #e2e8f0 100%);
             min-height: 100vh;
             overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
         }
 
         .main-content-wrapper {
@@ -23,6 +25,9 @@
             min-height: 100vh;
             margin-left: 0;
             width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         .sidebar-container {
@@ -162,7 +167,29 @@
         @media (min-width: 1024px) {
             body #sidebar { display: flex !important; width: 18rem !important; }
             body #bottom-nav { display: none !important; }
-            body .main-content-wrapper { margin-left: 18rem !important; width: calc(100% - 18rem); }
+            body .main-content-wrapper { margin-left: 18rem !important; width: calc(100% - 18rem); max-width: calc(100vw - 18rem); }
+        }
+        
+        /* Zoom handling */
+        * {
+            box-sizing: border-box;
+        }
+        
+        .container, .max-w-7xl, .max-w-2xl, .max-w-md {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* Prevent horizontal overflow */
+        section, div[class*="grid"], div[class*="flex"] {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* Text wrapping */
+        h1, h2, h3, h4, h5, h6, p, span {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
     </style>
 </head>
@@ -236,30 +263,30 @@
     </div>
 
     <div class="main-content-wrapper pb-24 lg:ml-72" style="padding-top: 1.5rem;">
-        <header class="user-header sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-lg">
-            <div class="flex items-center justify-between px-6 py-4">
-                <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-bold text-slate-800">@yield('page-title', 'Dashboard')</h1>
+        <header class="user-header sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-lg max-w-full overflow-x-hidden">
+            <div class="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3 sm:py-4 gap-2 sm:gap-4">
+                <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+                    <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 truncate">@yield('page-title', 'Dashboard')</h1>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <button class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-                        <i class="fas fa-bell text-xl"></i>
-                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                    <button class="relative p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                        <i class="fas fa-bell text-base sm:text-lg lg:text-xl"></i>
+                        <span class="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center">3</span>
                     </button>
-                    <div class="hidden md:flex items-center space-x-6">
-                        <div class="text-center">
-                            <p class="text-sm text-slate-500">Videos Watched</p>
-                            <p class="text-lg font-semibold text-green-500">@yield('quick-videos', '—')</p>
+                    <div class="hidden md:flex items-center space-x-3 sm:space-x-4 lg:space-x-6">
+                        <div class="text-center min-w-0">
+                            <p class="text-xs sm:text-sm text-slate-500 truncate">Videos Watched</p>
+                            <p class="text-sm sm:text-base lg:text-lg font-semibold text-green-500 truncate">@yield('quick-videos', '—')</p>
                         </div>
-                        <div class="text-center">
-                            <p class="text-sm text-slate-500">Total Earnings</p>
-                            <p class="text-lg font-semibold text-blue-600">@yield('quick-earnings', '—')</p>
+                        <div class="text-center min-w-0">
+                            <p class="text-xs sm:text-sm text-slate-500 truncate">Total Earnings</p>
+                            <p class="text-sm sm:text-base lg:text-lg font-semibold text-blue-600 truncate">@yield('quick-earnings', '—')</p>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
-        <main class="p-4 sm:p-6">
+        <main class="p-3 sm:p-4 lg:p-6 max-w-full overflow-x-hidden">
             @yield('content')
         </main>
     </div>
