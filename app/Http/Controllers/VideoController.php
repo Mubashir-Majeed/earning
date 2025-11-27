@@ -153,7 +153,7 @@ class VideoController extends Controller
             return response()->json(['error' => 'Watch session not found'], 404);
         }
 
-        // Validate watch duration - user must watch at least 80% of video
+        // Validate watch duration - user must watch the full video duration
         $watchDuration = $request->watch_duration;
         $requiredDuration = $request->required_duration;
         

@@ -292,7 +292,7 @@
     </div>
 
     <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 z-50 border-t border-white/20 shadow-2xl">
-        <div class="flex items-center h-20 w-full safe-area-bottom px-2 gap-0">
+        <div class="flex items-center justify-center h-16 w-full safe-area-bottom px-2 gap-0">
             @php
                 $bottomLinks = [
                     ['label' => 'Dashboard', 'icon' => 'fa-home', 'route' => 'dashboard', 'active' => ['dashboard']],
@@ -315,12 +315,12 @@
                             <i class="fas {{ $link['icon'] }} text-lg"></i>
                         </div>
                     </div>
-                    <span class="text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ $active ? 'text-blue-200' : 'text-slate-300' }}">{{ $link['label'] }}</span>
+                    <span class="hidden text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ $active ? 'text-blue-200' : 'text-slate-300' }}">{{ $link['label'] }}</span>
                 </a>
             @endforeach
 
-            <div class="relative flex flex-col items-center justify-center flex-1 h-full min-w-0">
-                <button id="mobile-menu-button" class="flex flex-col items-center justify-center relative group transition-all duration-200 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-200' : 'text-slate-300 hover:text-blue-200' }}">
+            <div class="relative flex flex-col items-center justify-center flex-1 h-full min-w-0 z-10">
+                <button id="mobile-menu-button" type="button" class="flex flex-col items-center justify-center relative group transition-all duration-200 {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-200' : 'text-slate-300 hover:text-blue-200' }}">
                     <div class="relative">
                         @if(request()->routeIs('level') || request()->routeIs('profile.*'))
                             <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-200 rounded-full"></div>
@@ -329,9 +329,9 @@
                             <i class="fas fa-ellipsis-h text-lg"></i>
                         </div>
                     </div>
-                    <span class="text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-200' : 'text-slate-300' }}">More</span>
+                    <span class="hidden text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ request()->routeIs('level') || request()->routeIs('profile.*') ? 'text-blue-200' : 'text-slate-300' }}">More</span>
                 </button>
-                <div id="mobile-dropdown" class="hidden absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden" style="max-height: calc(100vh - 120px); overflow-y: auto; bottom: calc(100% + 12px);">
+                <div id="mobile-dropdown" class="hidden fixed w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden" style="bottom: 80px; right: 10px; z-index: 9999; max-height: calc(100vh - 200px); overflow-y: auto;">
                     <div class="py-2">
                         <a href="{{ route('level') }}" class="flex items-center px-5 py-3.5 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-700 transition-all duration-200 {{ request()->routeIs('level') ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700' : '' }}">
                             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mr-3">
@@ -363,71 +363,44 @@
     </nav>
     
     <script>
-        // Mobile dropdown toggle with smart positioning
-        document.getElementById('mobile-menu-button')?.addEventListener('click', function(e) {
-            e.stopPropagation();
+        // Mobile dropdown toggle - fixed positioning above bottom nav
+        (function() {
+            const menuButton = document.getElementById('mobile-menu-button');
             const dropdown = document.getElementById('mobile-dropdown');
-            if (dropdown) {
-                dropdown.classList.toggle('hidden');
-                
-                if (!dropdown.classList.contains('hidden')) {
-                    // Calculate position to keep dropdown within viewport
-                    const rect = dropdown.getBoundingClientRect();
-                    const viewportHeight = window.innerHeight;
-                    const viewportWidth = window.innerWidth;
-                    const buttonRect = this.getBoundingClientRect();
+            
+            if (menuButton && dropdown) {
+                // Toggle dropdown on button click
+                menuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
                     
-                    // Reset positioning
-                    dropdown.style.bottom = '';
-                    dropdown.style.top = '';
-                    dropdown.style.left = '';
-                    dropdown.style.transform = '';
+                    console.log('Menu button clicked');
+                    const isHidden = dropdown.classList.contains('hidden');
                     
-                    // Check if dropdown goes off top of screen
-                    const spaceAbove = buttonRect.top;
-                    const dropdownHeight = rect.height || 200; // Approximate height
-                    
-                    if (spaceAbove < dropdownHeight + 20) {
-                        // Not enough space above, position below button
-                        dropdown.style.top = 'calc(100% + 12px)';
-                        dropdown.style.bottom = 'auto';
+                    if (isHidden) {
+                        // Show dropdown - positioned above bottom nav
+                        dropdown.classList.remove('hidden');
+                        console.log('Dropdown shown');
                     } else {
-                        // Enough space above, position above button
-                        dropdown.style.bottom = 'calc(100% + 12px)';
-                        dropdown.style.top = 'auto';
+                        // Hide dropdown
+                        dropdown.classList.add('hidden');
+                        console.log('Dropdown hidden');
                     }
-                    
-                    // Ensure dropdown doesn't go off left/right edges
-                    const dropdownWidth = rect.width || 224; // 56 * 4 = 224px (w-56)
-                    const leftPosition = buttonRect.left + (buttonRect.width / 2) - (dropdownWidth / 2);
-                    
-                    if (leftPosition < 10) {
-                        dropdown.style.left = '10px';
-                        dropdown.style.transform = 'none';
-                    } else if (leftPosition + dropdownWidth > viewportWidth - 10) {
-                        dropdown.style.left = 'auto';
-                        dropdown.style.right = '10px';
-                        dropdown.style.transform = 'none';
-                    } else {
-                        dropdown.style.left = '50%';
-                        dropdown.style.transform = 'translateX(-50%)';
-                    }
-                    
-                    // Ensure max height doesn't exceed viewport
-                    const maxHeight = Math.min(dropdownHeight, viewportHeight - 120);
-                    dropdown.style.maxHeight = maxHeight + 'px';
-                }
-            }
-        });
+                });
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('mobile-dropdown');
-            const button = document.getElementById('mobile-menu-button');
-            if (dropdown && !dropdown.contains(e.target) && !button?.contains(e.target)) {
-                dropdown.classList.add('hidden');
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (dropdown && !dropdown.classList.contains('hidden')) {
+                        if (!dropdown.contains(e.target) && !menuButton.contains(e.target)) {
+                            dropdown.classList.add('hidden');
+                            console.log('Dropdown closed by outside click');
+                        }
+                    }
+                });
+            } else {
+                console.error('Menu button or dropdown not found', { menuButton, dropdown });
             }
-        });
+        })();
     </script>
     
     @yield('scripts')

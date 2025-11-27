@@ -96,6 +96,44 @@ class WithdrawalController extends Controller
         return redirect()->route('dashboard')->with('success', 'Withdrawal request submitted successfully. It will be processed within 48 hours.');
     }
 
+    public function bindWallet(Request $request)
+    {
+        $user = Auth::user();
+
+        // Check if wallet is already bound
+        if ($user->hasBoundWallet()) {
+            return redirect()->route('withdrawal')->with('error', 'Your wallet is already bound. Contact support to update it.');
+        }
+
+        $request->validate([
+            'bep20_address' => [
+                'required',
+                'string',
+                'regex:/^0x[a-fA-F0-9]{40}$/',
+            ],
+        ]);
+
+        $normalizedAddress = strtolower($request->bep20_address);
+
+        // Check if address is already used by another user
+        $existingUser = \App\Models\User::where('bep20_address', $normalizedAddress)
+            ->where('id', '!=', $user->id)
+            ->first();
+
+        if ($existingUser) {
+            return redirect()->route('withdrawal')->withErrors(['bep20_address' => 'This wallet address is already bound to another account.']);
+        }
+
+        // Bind the wallet
+        $user->bep20_address = $normalizedAddress;
+        $user->wallet_bound_at = Carbon::now();
+        $user->payment_method = 'bep20';
+        $user->payment_details = $normalizedAddress;
+        $user->save();
+
+        return redirect()->route('withdrawal')->with('success', 'Wallet address bound successfully! You can now request withdrawals.');
+    }
+
     public function history()
     {
         $user = Auth::user();

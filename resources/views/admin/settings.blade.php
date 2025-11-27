@@ -105,6 +105,28 @@
                 </div>
             </div>
 
+            <!-- Social Media Settings -->
+            <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fab fa-youtube mr-2 text-red-600"></i>Social Media Settings
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="youtube_channel_url" class="block text-sm font-medium text-gray-700 mb-2">YouTube Channel URL</label>
+                        <input type="url"
+                               name="youtube_channel_url"
+                               id="youtube_channel_url"
+                               value="{{ old('youtube_channel_url', $settings['youtube_channel_url'] ?? '') }}"
+                               placeholder="https://www.youtube.com/@earnquest"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <p class="mt-1 text-xs text-gray-500">This link will be used for the "Open Channel" button on the user dashboard.</p>
+                        @error('youtube_channel_url')
+                            <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
             <!-- Rewards Settings -->
             <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">

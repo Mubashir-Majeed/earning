@@ -46,6 +46,7 @@ Route::middleware(['auth'])->prefix('payment')->name('payment.')->group(function
 // Withdrawal Routes
 Route::middleware(['auth'])->prefix('withdrawal')->name('withdrawal.')->group(function () {
     Route::post('/request', [WithdrawalController::class, 'request'])->name('request');
+    Route::post('/bind-wallet', [WithdrawalController::class, 'bindWallet'])->name('bind-wallet');
     Route::get('/history', [WithdrawalController::class, 'history'])->name('history');
 });
 

@@ -168,7 +168,7 @@
         let watchId = null;
         let isWatching = false;
         let videoDuration = {{ $video->duration ?? 60 }}; // Video duration in seconds
-        let requiredWatchTime = Math.floor(videoDuration * 0.8); // Must watch 80% of video
+        let requiredWatchTime = videoDuration; // Must watch full video duration
         let progressInterval = null;
         let currentWatchTime = 0;
         let watchStartTime = null;
@@ -202,6 +202,21 @@
             } else if (event.data === YT.PlayerState.ENDED) {
                 console.log('Video ended');
                 if (isWatching) {
+                    // Get final video time before completing
+                    try {
+                        if (player && player.getCurrentTime) {
+                            const finalTime = Math.floor(player.getCurrentTime());
+                            if (finalTime > 0) {
+                                currentWatchTime = finalTime;
+                            } else {
+                                currentWatchTime = videoDuration;
+                            }
+                        } else {
+                            currentWatchTime = videoDuration;
+                        }
+                    } catch (error) {
+                        currentWatchTime = videoDuration;
+                    }
                     completeVideoWatch();
                 }
             }
@@ -306,23 +321,30 @@
                 if (player && player.getCurrentTime) {
                     try {
                         const videoTime = player.getCurrentTime();
-                        if (videoTime > 0) {
+                        const playerState = player.getPlayerState();
+                        
+                        // Only track time if video is playing
+                        if (playerState === YT.PlayerState.PLAYING && videoTime > 0) {
                             currentWatchTime = Math.floor(videoTime);
-                        } else {
-                            currentWatchTime += 1;
+                        } else if (playerState === YT.PlayerState.ENDED) {
+                            // Video ended, set to full duration
+                            currentWatchTime = videoDuration;
                         }
+                        // Don't increment if paused or buffering
                     } catch (error) {
-                        currentWatchTime += 1;
+                        console.error('Error getting video time:', error);
                     }
                 } else {
+                    // Fallback: increment only if we don't have player
                     currentWatchTime += 1;
                 }
                 
                 updateProgress();
                 
-                // Check if user has watched enough
+                // Check if user has watched the full video duration
+                // Use >= to handle cases where video time might be slightly more than duration
                 if (currentWatchTime >= requiredWatchTime) {
-                    console.log('Required watch time reached');
+                    console.log('Full video duration watched:', currentWatchTime, 'seconds');
                     clearInterval(progressInterval);
                     completeVideoWatch();
                 }

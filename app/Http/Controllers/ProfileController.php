@@ -29,37 +29,25 @@ class ProfileController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
-        if (array_key_exists('bep20_address', $validated)) {
-            $submittedAddress = $validated['bep20_address'];
-
-            if (empty($submittedAddress)) {
-                unset($validated['bep20_address']);
-            } else {
-                $normalizedAddress = strtolower($submittedAddress);
-
-                if ($user->hasBoundWallet()) {
-                    if (strcasecmp($user->bep20_address, $normalizedAddress) !== 0) {
-                        return Redirect::route('profile.edit')
-                            ->withErrors(['bep20_address' => 'Your wallet is already bound. Contact support to update it.'])
-                            ->withInput();
-                    }
-
-                    unset($validated['bep20_address']);
-                } else {
-                    $validated['bep20_address'] = $normalizedAddress;
-                    $validated['wallet_bound_at'] = now();
-                    $validated['payment_method'] = 'bep20';
-                    $validated['payment_details'] = $normalizedAddress;
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($user->profile_picture) {
+                $oldPath = public_path('storage/' . $user->profile_picture);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
                 }
             }
+
+            // Store new profile picture
+            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
+            $validated['profile_picture'] = $path;
+        } else {
+            // Keep existing profile picture if not uploading new one
+            unset($validated['profile_picture']);
         }
 
         $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
         $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');

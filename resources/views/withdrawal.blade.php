@@ -121,7 +121,7 @@
             @endif
         </div>
 
-        @if($user->canWithdraw())
+        @if($user->canWithdraw() && $user->hasBoundWallet())
         <!-- Withdrawal Form -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <div class="mb-6">
@@ -176,17 +176,70 @@
                         </p>
                     </div>
 
-                    <!-- Withdrawal Wallet Details -->
-                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-link text-blue-500 mr-2"></i>
-                            <h4 class="text-sm font-semibold text-gray-900">Withdrawal Wallet (BEP20)</h4>
+                    <!-- Wallet Binding Section -->
+                    @if(!$user->hasBoundWallet())
+                        <div class="border-2 border-yellow-300 rounded-xl p-6 bg-gradient-to-r from-yellow-50 to-orange-50">
+                            <div class="flex items-start mb-4">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <h4 class="text-lg font-semibold text-yellow-900 mb-1">Bind Your BEP20 Wallet</h4>
+                                    <p class="text-sm text-yellow-800">You must bind your BEP20 wallet address before requesting a withdrawal. This address will be locked after binding.</p>
+                                </div>
+                            </div>
+                            
+                            <form method="POST" action="{{ route('withdrawal.bind-wallet') }}" class="space-y-4">
+                                @csrf
+                                <div>
+                                    <label for="bep20_address" class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <i class="fas fa-wallet mr-2 text-blue-600"></i>BEP20 Wallet Address
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="bep20_address" 
+                                        name="bep20_address" 
+                                        value="{{ old('bep20_address') }}"
+                                        placeholder="0x..." 
+                                        required
+                                        pattern="^0x[a-fA-F0-9]{40}$"
+                                        class="w-full px-4 py-3 border-2 {{ $errors->has('bep20_address') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-sm bg-white"
+                                    />
+                                    @error('bep20_address')
+                                        <p class="mt-2 text-sm text-red-600 flex items-center">
+                                            <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                        </p>
+                                    @enderror
+                                    <p class="mt-2 text-xs text-gray-600 flex items-center">
+                                        <i class="fas fa-info-circle mr-1"></i>Enter a valid BEP20 wallet address (0x followed by 40 hexadecimal characters)
+                                    </p>
+                                </div>
+                                <button type="submit" class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-link mr-2"></i>Bind Wallet Address
+                                </button>
+                            </form>
                         </div>
-                        <p class="text-sm text-gray-700 font-mono break-all">{{ $user->bep20_address }}</p>
-                        <p class="mt-2 text-xs text-gray-500">
-                            Withdrawals are only processed to this bound BEP20 wallet. Update it from your profile before submitting a request.
-                        </p>
-                    </div>
+                    @else
+                        <!-- Withdrawal Wallet Details (Read-only if bound) -->
+                        <div class="border-2 border-green-200 rounded-xl p-6 bg-gradient-to-r from-green-50 to-emerald-50">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-600 text-xl mr-2"></i>
+                                    <h4 class="text-lg font-semibold text-green-900">Wallet Bound Successfully</h4>
+                                </div>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300">
+                                    <i class="fas fa-lock mr-1"></i>Locked
+                                </span>
+                            </div>
+                            <div class="bg-white rounded-lg p-4 border border-green-200">
+                                <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">BEP20 Wallet Address</p>
+                                <p class="text-sm text-gray-900 font-mono break-all">{{ $user->bep20_address }}</p>
+                            </div>
+                            <p class="mt-3 text-xs text-gray-600 flex items-center">
+                                <i class="fas fa-info-circle mr-1"></i>Withdrawals will be processed to this wallet address. Contact support to update it.
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Fee Calculation -->
                     <div class="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 rounded-lg p-6">

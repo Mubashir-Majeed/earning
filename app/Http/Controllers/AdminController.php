@@ -582,6 +582,7 @@ class AdminController extends Controller
             'withdrawal_fee_percent' => \App\Models\Setting::getValue('withdrawal_fee_percent', config('platform.withdrawal_fee_percent', 5)),
             'referral_bonus' => \App\Models\Setting::getValue('referral_bonus', config('platform.referral_bonus', 5)),
             'platform_wallet_address' => \App\Models\Setting::getValue('platform_wallet_address', config('platform.wallet_address')),
+            'youtube_channel_url' => \App\Models\Setting::getValue('youtube_channel_url', 'https://www.youtube.com/@earnquest'),
             'packages' => array_replace_recursive(
                 $defaultPackages,
                 (array) \App\Models\Setting::getValue('packages', [])
@@ -602,6 +603,7 @@ class AdminController extends Controller
             'withdrawal_fee_percent' => 'required|numeric|min:0|max:100',
             'referral_bonus' => 'required|numeric|min:0',
             'platform_wallet_address' => ['nullable', 'regex:/^0x[a-fA-F0-9]{40}$/'],
+            'youtube_channel_url' => 'nullable|url|max:500',
             'packages' => 'required|array',
         ]);
 
@@ -635,6 +637,7 @@ class AdminController extends Controller
         \App\Models\Setting::setValue('withdrawal_fee_percent', (float) $validated['withdrawal_fee_percent']);
         \App\Models\Setting::setValue('referral_bonus', (float) $validated['referral_bonus']);
         \App\Models\Setting::setValue('platform_wallet_address', $validated['platform_wallet_address']);
+        \App\Models\Setting::setValue('youtube_channel_url', $validated['youtube_channel_url'] ?? 'https://www.youtube.com/@earnquest');
         \App\Models\Setting::setValue('packages', $normalizedPackages);
 
         \App\Models\Setting::apply($defaultPackages);

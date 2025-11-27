@@ -317,7 +317,7 @@
                         <p class="text-xs text-slate-500">Stay updated with announcements and tutorials. Subscription is required before your first withdrawal.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <a href="https://www.youtube.com/@earnquest" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg shadow hover:bg-red-600 transition">
+                        <a href="{{ \App\Models\Setting::getValue('youtube_channel_url', 'https://www.youtube.com/@earnquest') }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg shadow hover:bg-red-600 transition">
                             <i class="fab fa-youtube"></i> Open Channel
                         </a>
                         <form method="POST" action="{{ route('tasks.channel-subscribe') }}">
