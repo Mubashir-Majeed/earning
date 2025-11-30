@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Withdrawal;
+use App\Traits\CreatesNotifications;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class WithdrawalController extends Controller
 {
+    use CreatesNotifications;
+    
     public function __construct()
     {
         // Middleware is applied in routes
@@ -76,7 +79,7 @@ class WithdrawalController extends Controller
 
         DB::transaction(function () use ($user, $request, $feeAmount, $netAmount) {
             // Create withdrawal record
-            Withdrawal::create([
+            $withdrawal = Withdrawal::create([
                 'user_id' => $user->id,
                 'amount' => $request->amount,
                 'fee_amount' => $feeAmount,
@@ -91,6 +94,9 @@ class WithdrawalController extends Controller
             // Deduct amount from user balance and increment monthly count
             $user->decrement('balance', $request->amount);
             $user->incrementMonthlyWithdrawalCount();
+            
+            // Notify all admins about the new withdrawal request
+            self::notifyAdminsOfWithdrawalRequest($user, $request->amount);
         });
 
         return redirect()->route('dashboard')->with('success', 'Withdrawal request submitted successfully. It will be processed within 48 hours.');

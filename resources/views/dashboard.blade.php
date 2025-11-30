@@ -317,12 +317,12 @@
                         <p class="text-xs text-slate-500">Stay updated with announcements and tutorials. Subscription is required before your first withdrawal.</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <a href="{{ \App\Models\Setting::getValue('youtube_channel_url', 'https://www.youtube.com/@earnquest') }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg shadow hover:bg-red-600 transition">
+                        <a href="{{ \App\Models\Setting::getValue('youtube_channel_url', 'https://www.youtube.com/@earnquest') }}" target="_blank" rel="noopener" id="open-channel-btn" class="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg shadow hover:bg-red-600 transition">
                             <i class="fab fa-youtube"></i> Open Channel
                         </a>
-                        <form method="POST" action="{{ route('tasks.channel-subscribe') }}">
+                        <form method="POST" action="{{ route('tasks.channel-subscribe') }}" class="relative">
                             @csrf
-                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold {{ $user->hasSubscribedChannel() ? 'bg-emerald-100 text-emerald-700 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 transition' }}" {{ $user->hasSubscribedChannel() ? 'disabled' : '' }}>
+                            <button type="submit" id="confirm-subscription-btn" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold {{ $user->hasSubscribedChannel() ? 'bg-emerald-100 text-emerald-700 cursor-not-allowed' : 'bg-gray-400 text-white cursor-not-allowed opacity-60' }}" {{ $user->hasSubscribedChannel() ? 'disabled' : 'disabled' }} title="{{ $user->hasSubscribedChannel() ? 'Subscription already confirmed' : 'Please click "Open Channel" first to enable this button' }}">
                                 <i class="fas {{ $user->hasSubscribedChannel() ? 'fa-check' : 'fa-clipboard-check' }}"></i>
                                 {{ $user->hasSubscribedChannel() ? 'Subscription Confirmed' : 'Confirm Subscription' }}
                             </button>
@@ -443,4 +443,89 @@
             </div>
         </section>
     </div>
+@endsection
+
+@section('scripts')
+<script>
+    (function() {
+        const openChannelBtn = document.getElementById('open-channel-btn');
+        const confirmSubscriptionBtn = document.getElementById('confirm-subscription-btn');
+        
+        // Only add functionality if user hasn't already subscribed
+        @if(!$user->hasSubscribedChannel())
+            let channelOpened = false;
+            
+            // Check if button was already clicked (using sessionStorage)
+            if (sessionStorage.getItem('channelOpened') === 'true') {
+                channelOpened = true;
+                enableConfirmButton();
+            }
+            
+            function enableConfirmButton() {
+                if (confirmSubscriptionBtn) {
+                    channelOpened = true;
+                    confirmSubscriptionBtn.disabled = false;
+                    confirmSubscriptionBtn.classList.remove('bg-gray-400', 'cursor-not-allowed', 'opacity-60');
+                    confirmSubscriptionBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'transition');
+                    confirmSubscriptionBtn.removeAttribute('title');
+                }
+            }
+            
+            // Add click event to Open Channel button
+            if (openChannelBtn) {
+                openChannelBtn.addEventListener('click', function() {
+                    if (!channelOpened) {
+                        sessionStorage.setItem('channelOpened', 'true');
+                        enableConfirmButton();
+                    }
+                });
+            }
+            
+            // Add hover tooltip for disabled state
+            if (confirmSubscriptionBtn) {
+                const formElement = confirmSubscriptionBtn.closest('form');
+                
+                confirmSubscriptionBtn.addEventListener('mouseenter', function() {
+                    if (this.disabled && !channelOpened) {
+                        // Remove any existing tooltip first
+                        const existingTooltip = document.getElementById('subscription-tooltip');
+                        if (existingTooltip) {
+                            existingTooltip.remove();
+                        }
+                        
+                        // Show a more visible alert/tooltip
+                        const tooltip = document.createElement('div');
+                        tooltip.id = 'subscription-tooltip';
+                        tooltip.className = 'absolute z-50 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg pointer-events-none';
+                        tooltip.textContent = 'Please click "Open Channel" first';
+                        tooltip.style.bottom = '100%';
+                        tooltip.style.marginBottom = '8px';
+                        tooltip.style.left = '50%';
+                        tooltip.style.transform = 'translateX(-50%)';
+                        tooltip.style.whiteSpace = 'nowrap';
+                        
+                        // Add arrow
+                        const arrow = document.createElement('div');
+                        arrow.className = 'absolute top-full left-1/2 transform -translate-x-1/2';
+                        arrow.style.borderLeft = '6px solid transparent';
+                        arrow.style.borderRight = '6px solid transparent';
+                        arrow.style.borderTop = '6px solid #111827';
+                        tooltip.appendChild(arrow);
+                        
+                        if (formElement) {
+                            formElement.appendChild(tooltip);
+                        }
+                    }
+                });
+                
+                confirmSubscriptionBtn.addEventListener('mouseleave', function() {
+                    const tooltip = document.getElementById('subscription-tooltip');
+                    if (tooltip) {
+                        tooltip.remove();
+                    }
+                });
+            }
+        @endif
+    })();
+</script>
 @endsection

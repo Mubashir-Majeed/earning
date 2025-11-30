@@ -6,6 +6,7 @@ use App\Http\Controllers\VideoController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\WithdrawalController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -70,6 +71,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/withdrawals/{withdrawal}/approve', [AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
     Route::post('/withdrawals/{withdrawal}/process', [AdminController::class, 'processWithdrawal'])->name('withdrawals.process');
     Route::post('/withdrawals/{withdrawal}/reject', [AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+    Route::get('/withdrawals/{withdrawal}/details', [AdminController::class, 'withdrawalDetails'])->name('withdrawals.details');
+    Route::post('/withdrawals/{withdrawal}/note', [AdminController::class, 'addWithdrawalNote'])->name('withdrawals.note');
     
     // Referrals Management
     Route::get('/referrals', [AdminController::class, 'referrals'])->name('referrals');
@@ -80,6 +83,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // Settings Routes
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
     Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+});
+
+// Notification Routes
+Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+    Route::get('/recent', [NotificationController::class, 'recent'])->name('recent');
+    Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
+    Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('read-all');
+    Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
 });
 
 // Profile Routes (Breeze)

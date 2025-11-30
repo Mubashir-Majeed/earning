@@ -35,14 +35,14 @@ return [
         ],
         'growth_50' => [
             [
-                'package' => 'starter_35',
-                'count' => 2,
-                'description' => 'Refer two Starter ($35) members to enable withdrawals.',
-            ],
-            [
                 'package' => 'growth_50',
                 'count' => 1,
-                'description' => 'Alternatively, refer one Growth ($50) member.',
+                'description' => 'Refer one Growth ($50) member to enable withdrawals.',
+            ],
+            [
+                'package' => 'starter_35',
+                'count' => 2,
+                'description' => 'Alternatively, refer two Starter ($35) members.',
                 'is_alternative' => true,
             ],
         ],

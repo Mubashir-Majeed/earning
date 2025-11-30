@@ -113,6 +113,11 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'referrer_id');
     }
 
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     /**
      * Get the actual count of referrals who have deposited
      * This ensures accurate count based on actual referrals with deposits
@@ -179,6 +184,38 @@ class User extends Authenticatable
         return $counts;
     }
 
+    /**
+     * Calculate total dollar value of referrals
+     */
+    public function totalReferralValue(): float
+    {
+        $counts = $this->referralCountsByPackage();
+        $packages = config('investment.packages', []);
+        $total = 0.0;
+
+        foreach ($counts as $packageCode => $count) {
+            if (isset($packages[$packageCode])) {
+                $packageValue = (float) ($packages[$packageCode]['deposit_amount'] ?? 0);
+                $total += $packageValue * $count;
+            }
+        }
+
+        return $total;
+    }
+
+    /**
+     * Get required referral value based on user's package
+     */
+    public function requiredReferralValue(): float
+    {
+        if (!$this->investment_package) {
+            return 0.0;
+        }
+
+        $package = config('investment.packages.' . $this->investment_package);
+        return (float) ($package['deposit_amount'] ?? 0.0);
+    }
+
     public function referralRequirementRules(): array
     {
         if (!$this->investment_package) {
@@ -236,29 +273,11 @@ class User extends Authenticatable
             return false;
         }
 
-        $rules = $this->referralRequirementRules();
-        if (empty($rules)) {
-            return true;
-        }
+        $requiredValue = $this->requiredReferralValue();
+        $currentValue = $this->totalReferralValue();
 
-        $counts = $this->referralCountsByPackage();
-
-        foreach ($rules as $rule) {
-            $packageCode = $rule['package'] ?? null;
-            $required = (int) ($rule['count'] ?? 0);
-
-            if (!$packageCode || $required <= 0) {
-                continue;
-            }
-
-            $current = $counts[$packageCode] ?? 0;
-
-            if ($current >= $required) {
-                return true;
-            }
-        }
-
-        return false;
+        // Check if total referral value meets or exceeds required value
+        return $currentValue >= $requiredValue;
     }
 
     public function withinMonthlyWithdrawalQuota(): bool

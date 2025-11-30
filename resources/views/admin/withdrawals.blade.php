@@ -191,10 +191,10 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     @endif
-                                    <button class="text-blue-600 hover:text-blue-900 transition-colors" title="View Details">
+                                    <button onclick="openViewModal({{ $withdrawal->id }})" class="text-blue-600 hover:text-blue-900 transition-colors" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="text-gray-600 hover:text-gray-900 transition-colors" title="Add Note">
+                                    <button onclick="openNoteModal({{ $withdrawal->id }}, {{ json_encode($withdrawal->admin_notes ?? '') }})" class="text-gray-600 hover:text-gray-900 transition-colors" title="Add Note">
                                         <i class="fas fa-comment"></i>
                                     </button>
                                 </div>
@@ -283,7 +283,6 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Reject Withdrawal</h3>
                 <form id="rejectForm" method="POST">
                     @csrf
-                    @method('DELETE')
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Reason for rejection</label>
                         <textarea name="admin_notes" rows="4" required
@@ -306,7 +305,57 @@
     </div>
 </div>
 
+<!-- View Details Modal -->
+<div id="viewModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Withdrawal Details</h3>
+                    <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div id="viewModalContent" class="space-y-4">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div id="noteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Add Admin Note</h3>
+                <form id="noteForm" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
+                        <textarea name="admin_notes" id="noteTextarea" rows="4"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Add notes about this withdrawal..."></textarea>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" onclick="closeNoteModal()"
+                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Save Note
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    // Reject Modal Functions
     function openRejectModal(withdrawalId) {
         const modal = document.getElementById('rejectModal');
         const form = document.getElementById('rejectForm');
@@ -317,12 +366,114 @@
     function closeRejectModal() {
         const modal = document.getElementById('rejectModal');
         modal.classList.add('hidden');
+        document.getElementById('rejectForm').reset();
     }
 
-    // Close modal when clicking outside
-    document.getElementById('rejectModal').addEventListener('click', function(e) {
+    // View Details Modal Functions
+    function openViewModal(withdrawalId) {
+        const modal = document.getElementById('viewModal');
+        const content = document.getElementById('viewModalContent');
+        
+        // Show loading
+        content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i></div>';
+        modal.classList.remove('hidden');
+        
+        // Fetch withdrawal details
+        fetch(`/admin/withdrawals/${withdrawalId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                content.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">User</label>
+                            <p class="text-sm font-semibold text-gray-900">${data.user_name}</p>
+                            <p class="text-xs text-gray-600">${data.user_email}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Amount</label>
+                            <p class="text-sm font-semibold text-gray-900">$${parseFloat(data.amount).toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Fee</label>
+                            <p class="text-sm font-semibold text-gray-900">$${parseFloat(data.fee_amount).toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Net Amount</label>
+                            <p class="text-sm font-semibold text-green-600">$${parseFloat(data.net_amount).toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Status</label>
+                            <p class="text-sm font-semibold text-gray-900">${data.status}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Method</label>
+                            <p class="text-sm font-semibold text-gray-900">${data.method}</p>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-gray-500">Wallet Address</label>
+                            <p class="text-sm font-mono text-gray-900 break-all">${data.wallet_address}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Requested At</label>
+                            <p class="text-sm text-gray-900">${data.requested_at || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Processed At</label>
+                            <p class="text-sm text-gray-900">${data.processed_at || 'N/A'}</p>
+                        </div>
+                        ${data.admin_notes ? `
+                        <div class="col-span-2">
+                            <label class="text-sm font-medium text-gray-500">Admin Notes</label>
+                            <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">${data.admin_notes}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            })
+            .catch(error => {
+                content.innerHTML = '<div class="text-center py-8 text-red-600">Error loading details</div>';
+                console.error('Error:', error);
+            });
+    }
+
+    function closeViewModal() {
+        const modal = document.getElementById('viewModal');
+        modal.classList.add('hidden');
+    }
+
+    // Note Modal Functions
+    function openNoteModal(withdrawalId, currentNote = '') {
+        const modal = document.getElementById('noteModal');
+        const form = document.getElementById('noteForm');
+        const textarea = document.getElementById('noteTextarea');
+        
+        form.action = `/admin/withdrawals/${withdrawalId}/note`;
+        textarea.value = currentNote;
+        modal.classList.remove('hidden');
+    }
+
+    function closeNoteModal() {
+        const modal = document.getElementById('noteModal');
+        modal.classList.add('hidden');
+        document.getElementById('noteForm').reset();
+    }
+
+    // Close modals when clicking outside
+    document.getElementById('rejectModal')?.addEventListener('click', function(e) {
         if (e.target === this) {
             closeRejectModal();
+        }
+    });
+
+    document.getElementById('viewModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeViewModal();
+        }
+    });
+
+    document.getElementById('noteModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeNoteModal();
         }
     });
 </script>

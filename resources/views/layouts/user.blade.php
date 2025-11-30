@@ -9,9 +9,12 @@
     <meta http-equiv="Expires" content="0">
     <title>@yield('title', 'Dashboard - Earn Quest')</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @vite(['resources/css/app.css','resources/js/app.js'])
     <style>
+        [x-cloak] { display: none !important; }
+        
         body {
             background: linear-gradient(120deg, #e0e7ff 0%, #f1f5f9 40%, #e2e8f0 100%);
             min-height: 100vh;
@@ -263,16 +266,159 @@
     </div>
 
     <div class="main-content-wrapper pb-24 lg:ml-72" style="padding-top: 1.5rem;">
-        <header class="user-header sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-lg max-w-full overflow-x-hidden">
+        <header class="user-header sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-lg max-w-full">
             <div class="flex items-center justify-between px-3 sm:px-4 lg:px-6 py-3 sm:py-4 gap-2 sm:gap-4">
                 <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
                     <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 truncate">@yield('page-title', 'Dashboard')</h1>
                 </div>
-                <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-                    <button class="relative p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-                        <i class="fas fa-bell text-base sm:text-lg lg:text-xl"></i>
-                        <span class="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center">3</span>
-                    </button>
+                <div class="flex items-center space-x-2 sm:space-x-4 flex-shrink-0 relative">
+                    <!-- Notifications Dropdown -->
+                    @php
+                        $recentNotifications = auth()->user()->notifications()
+                            ->latest()
+                            ->limit(10)
+                            ->get()
+                            ->map(function($n) {
+                                return [
+                                    'id' => $n->id,
+                                    'type' => $n->type,
+                                    'title' => $n->title,
+                                    'message' => $n->message,
+                                    'link' => $n->link,
+                                    'is_read' => (bool) $n->is_read,
+                                    'created_at' => $n->created_at ? $n->created_at->toISOString() : null,
+                                ];
+                            })
+                            ->values()
+                            ->all();
+                    @endphp
+                    <div class="relative" x-data="{ 
+                        open: false, 
+                        unreadCount: {{ auth()->user()->notifications()->where('is_read', false)->count() }}, 
+                        notifications: @json($recentNotifications),
+                        loading: false
+                    }" x-init="
+                        async function loadNotifications() {
+                            loading = true;
+                            try {
+                                const response = await fetch('{{ route('notifications.recent') }}', {
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    credentials: 'same-origin'
+                                });
+                                
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                
+                                const data = await response.json();
+                                console.log('Notifications data received:', data);
+                                
+                                if (data && data.notifications) {
+                                    notifications = Array.isArray(data.notifications) ? data.notifications : [];
+                                    unreadCount = data.unread_count || 0;
+                                    console.log('Notifications loaded:', notifications.length);
+                                } else {
+                                    console.warn('Invalid data format:', data);
+                                    notifications = [];
+                                }
+                            } catch (error) {
+                                console.error('Error loading notifications:', error);
+                                notifications = [];
+                            } finally {
+                                loading = false;
+                            }
+                        }
+                        loadNotifications();
+                        setInterval(loadNotifications, 30000);
+                    ">
+                        <button @click.stop="open = !open" type="button" class="relative p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                            <i class="fas fa-bell text-base sm:text-lg lg:text-xl"></i>
+                            <span x-show="unreadCount > 0" x-text="unreadCount > 99 ? '99+' : unreadCount" class="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center font-semibold"></span>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div x-show="open" @click.away="open = false" x-cloak x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-[100] max-h-96 overflow-hidden">
+                            <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+                                <div class="flex items-center gap-2">
+                                    <button @click="fetch('{{ route('notifications.read-all') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' } }).then(() => { unreadCount = 0; notifications.forEach(n => n.is_read = true); })" class="text-xs text-blue-600 hover:text-blue-700">Mark all read</button>
+                                    <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 hover:text-blue-700">View all</a>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto max-h-80">
+                                <template x-if="loading">
+                                    <div class="p-8 text-center text-gray-500 text-sm">
+                                        <i class="fas fa-spinner fa-spin text-3xl mb-2 text-gray-300"></i>
+                                        <p>Loading...</p>
+                                    </div>
+                                </template>
+                                <template x-if="!loading && notifications.length === 0">
+                                    <div class="p-8 text-center text-gray-500 text-sm">
+                                        <i class="fas fa-bell-slash text-3xl mb-2 text-gray-300"></i>
+                                        <p>No notifications</p>
+                                    </div>
+                                </template>
+                                <template x-if="!loading && notifications.length > 0">
+                                    <template x-for="notification in notifications" :key="notification.id">
+                                        <a :href="notification.link || '#'" @click.prevent="
+                                            if (!notification.is_read) { 
+                                                fetch('{{ route('notifications.read', ':id') }}'.replace(':id', notification.id), { 
+                                                    method: 'POST', 
+                                                    headers: { 
+                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                                        'Content-Type': 'application/json',
+                                                        'Accept': 'application/json'
+                                                    } 
+                                                }).then(() => { 
+                                                    notification.is_read = true; 
+                                                    unreadCount = Math.max(0, unreadCount - 1); 
+                                                }); 
+                                            }
+                                            if (notification.link && notification.link !== '#') {
+                                                window.location.href = notification.link;
+                                            }
+                                        " class="block px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer" :class="notification.is_read ? 'bg-white' : 'bg-blue-50'">
+                                            <div class="flex items-start gap-3">
+                                                <div class="flex-shrink-0 mt-1">
+                                                    <div class="w-8 h-8 rounded-full flex items-center justify-center" :class="{
+                                                        'bg-blue-100 text-blue-600': notification.type === 'deposit',
+                                                        'bg-green-100 text-green-600': notification.type === 'withdrawal' || notification.type === 'earnings',
+                                                        'bg-purple-100 text-purple-600': notification.type === 'referral',
+                                                        'bg-red-100 text-red-600': notification.type === 'admin',
+                                                        'bg-yellow-100 text-yellow-600': notification.type === 'package',
+                                                        'bg-orange-100 text-orange-600': notification.type === 'level',
+                                                        'bg-gray-100 text-gray-600': true
+                                                    }">
+                                                        <i class="fas text-xs" :class="{
+                                                            'fa-wallet': notification.type === 'deposit',
+                                                            'fa-money-bill-wave': notification.type === 'withdrawal',
+                                                            'fa-dollar-sign': notification.type === 'earnings',
+                                                            'fa-user-plus': notification.type === 'referral',
+                                                            'fa-shield-alt': notification.type === 'admin',
+                                                            'fa-gem': notification.type === 'package',
+                                                            'fa-trophy': notification.type === 'level',
+                                                            'fa-bell': true
+                                                        }"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-semibold text-gray-900" x-text="notification.title || 'Notification'"></p>
+                                                    <p class="text-xs text-gray-600 mt-1 line-clamp-2" x-text="notification.message || ''"></p>
+                                                    <p class="text-xs text-gray-400 mt-1" x-text="notification.created_at ? new Date(notification.created_at).toLocaleString() : ''"></p>
+                                                </div>
+                                                <div x-show="!notification.is_read" class="flex-shrink-0 mt-1">
+                                                    <span class="w-2 h-2 bg-blue-500 rounded-full block"></span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                     <div class="hidden md:flex items-center space-x-3 sm:space-x-4 lg:space-x-6">
                         <div class="text-center min-w-0">
                             <p class="text-xs sm:text-sm text-slate-500 truncate">Videos Watched</p>

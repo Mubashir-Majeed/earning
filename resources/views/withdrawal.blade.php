@@ -17,6 +17,8 @@
         $withdrawalCap = $packageConfig['withdrawal_cap'] ?? $availableProfit;
         $maxWithdrawable = min($availableProfit, $withdrawalCap);
         $minWithdrawalValue = $minWithdrawal ?? config('platform.min_withdrawal', 10);
+        $requiredReferralValue = $user->requiredReferralValue();
+        $currentReferralValue = $user->totalReferralValue();
     @endphp
 
     <div class="max-w-4xl mx-auto">
@@ -44,8 +46,8 @@
                     <div class="ml-3">
                         <h4 class="text-sm font-medium {{ $user->meetsReferralRequirementForWithdrawal() ? 'text-green-800' : 'text-yellow-800' }}">Referral Requirement</h4>
                         <p class="text-sm {{ $user->meetsReferralRequirementForWithdrawal() ? 'text-green-700' : 'text-yellow-700' }}">
-                            @if($primaryRule)
-                                {{ $primaryRule['current'] }} / {{ $primaryRule['required'] }} {{ data_get($packageCatalog, $primaryRule['package'].'.name', strtoupper($primaryRule['package'])) }} referrals
+                            @if($user->investment_package)
+                                ${{ number_format($currentReferralValue, 2) }} / ${{ number_format($requiredReferralValue, 2) }} required
                             @else
                                 Awaiting package confirmation
                             @endif

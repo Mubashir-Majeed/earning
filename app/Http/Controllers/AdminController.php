@@ -8,11 +8,13 @@ use App\Models\Video;
 use App\Models\Withdrawal;
 use App\Models\Deposit;
 use App\Models\UserEarning;
+use App\Traits\CreatesNotifications;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
+    use CreatesNotifications;
     public function __construct()
     {
         // Middleware is applied in routes
@@ -551,6 +553,10 @@ class AdminController extends Controller
                             'description' => "Referral bonus for {$deposit->user->name} (Pro package deposit)",
                             'earned_date' => now()->toDateString(),
                         ]);
+                        
+                        // Create notification for referrer
+                        $packageName = config("investment.packages.{$packageCode}.name", "Package");
+                        self::notifyReferral($referrer, $deposit->user->name, $packageName);
                     } else {
                         // Sync the count to ensure accuracy (in case of data inconsistency)
                         $actualCount = $referrer->actual_referrals_count;
@@ -560,6 +566,10 @@ class AdminController extends Controller
                     }
                 }
             }
+            
+            // Create notification for deposit approval
+            $packageName = config("investment.packages.{$packageCode}.name", "Package");
+            self::notifyDepositApproved($deposit->user, $deposit->amount, $packageName);
         });
 
         return redirect()->route('admin.deposits')->with('success', 'Deposit completed and user balance credited.');
@@ -612,6 +622,9 @@ class AdminController extends Controller
             'processed_at' => now(),
             'completed_at' => now(),
         ]);
+        
+        // Create notification for withdrawal approval
+        self::notifyWithdrawalApproved($withdrawal->user, $withdrawal->amount);
 
         return redirect()->route('admin.withdrawals')->with('success', 'Withdrawal approved and completed successfully.');
     }
@@ -867,8 +880,46 @@ class AdminController extends Controller
 
             // Refund the amount back to user's balance
             $withdrawal->user->increment('balance', $withdrawal->amount);
+            
+            // Create notification for withdrawal rejection
+            self::notifyWithdrawalRejected($withdrawal->user, $withdrawal->amount, $request->admin_notes);
         });
 
         return redirect()->route('admin.withdrawals')->with('success', 'Withdrawal rejected and amount refunded to user.');
+    }
+
+    public function withdrawalDetails(Withdrawal $withdrawal)
+    {
+        $this->checkAdminRole();
+        
+        return response()->json([
+            'user_name' => $withdrawal->user->name,
+            'user_email' => $withdrawal->user->email,
+            'amount' => $withdrawal->amount,
+            'fee_amount' => $withdrawal->fee_amount,
+            'net_amount' => $withdrawal->net_amount,
+            'status' => ucfirst($withdrawal->status),
+            'method' => strtoupper($withdrawal->withdrawal_method ?? 'BEP20'),
+            'wallet_address' => $withdrawal->withdrawal_details,
+            'requested_at' => $withdrawal->requested_at ? \Carbon\Carbon::parse($withdrawal->requested_at)->format('M d, Y H:i') : null,
+            'processed_at' => $withdrawal->processed_at ? \Carbon\Carbon::parse($withdrawal->processed_at)->format('M d, Y H:i') : null,
+            'completed_at' => $withdrawal->completed_at ? \Carbon\Carbon::parse($withdrawal->completed_at)->format('M d, Y H:i') : null,
+            'admin_notes' => $withdrawal->admin_notes,
+        ]);
+    }
+
+    public function addWithdrawalNote(Request $request, Withdrawal $withdrawal)
+    {
+        $this->checkAdminRole();
+        
+        $request->validate([
+            'admin_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $withdrawal->update([
+            'admin_notes' => $request->admin_notes,
+        ]);
+
+        return redirect()->route('admin.withdrawals')->with('success', 'Admin note updated successfully.');
     }
 }

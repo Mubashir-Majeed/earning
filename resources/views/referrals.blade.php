@@ -58,21 +58,57 @@
             @if($progressCollection->isEmpty())
                 <p class="text-sm text-gray-500">Referral rules will appear after your deposit is approved.</p>
             @else
+                @php
+                    $requiredValue = $user->requiredReferralValue();
+                    $currentValue = $user->totalReferralValue();
+                    $packageAmount = number_format($requiredValue, 2);
+                @endphp
                 <div class="space-y-3">
-                    @foreach($progressCollection as $rule)
-                        <div class="p-3 border border-gray-200 rounded-lg flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-semibold text-gray-900">
-                                    {{ $rule['is_alternative'] ? 'Alternative Path' : 'Primary Requirement' }}
-                                </p>
-                                <p class="text-xs text-gray-500">{{ $rule['description'] }}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-sm font-semibold text-gray-900">{{ $rule['current'] }} / {{ $rule['required'] }}</p>
-                                <p class="text-xs text-gray-500">{{ data_get($packageCatalog, $rule['package'].'.name', strtoupper($rule['package'])) }} referrals</p>
-                            </div>
+                    <div class="p-4 border border-gray-200 rounded-lg bg-blue-50">
+                        <p class="text-sm font-semibold text-gray-900 mb-2">Primary Requirement</p>
+                        <p class="text-xs text-gray-700 mb-3">
+                            Refer members worth at least <strong>${{ $packageAmount }}</strong> to enable withdrawals.
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-600">Progress:</span>
+                            <span class="text-sm font-semibold text-gray-900">${{ number_format($currentValue, 2) }} / ${{ $packageAmount }}</span>
                         </div>
-                    @endforeach
+                        <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: {{ min(100, ($currentValue / max(1, $requiredValue)) * 100) }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 border border-gray-200 rounded-lg bg-gray-50">
+                        <p class="text-xs font-semibold text-gray-700 mb-2">You can achieve this by:</p>
+                        <ul class="text-xs text-gray-600 space-y-1">
+                            @foreach($progressCollection as $rule)
+                                @if(!$rule['is_alternative'])
+                                    @php
+                                        $packageName = data_get($packageCatalog, $rule['package'].'.name', 'Package');
+                                        $packageValue = data_get($packageCatalog, $rule['package'].'.deposit_amount', 0);
+                                        $totalValue = $rule['required'] * $packageValue;
+                                    @endphp
+                                    <li class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-2 text-xs"></i>
+                                        <span>{{ $rule['required'] }} {{ $packageName }} member(s) (${{ number_format($totalValue, 2) }})</span>
+                                    </li>
+                                @endif
+                            @endforeach
+                            @foreach($progressCollection as $rule)
+                                @if($rule['is_alternative'])
+                                    @php
+                                        $packageName = data_get($packageCatalog, $rule['package'].'.name', 'Package');
+                                        $packageValue = data_get($packageCatalog, $rule['package'].'.deposit_amount', 0);
+                                        $totalValue = $rule['required'] * $packageValue;
+                                    @endphp
+                                    <li class="flex items-center">
+                                        <i class="fas fa-check-circle text-blue-500 mr-2 text-xs"></i>
+                                        <span>{{ $rule['required'] }} {{ $packageName }} member(s) (${{ number_format($totalValue, 2) }})</span>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
             @endif
         </div>

@@ -87,6 +87,10 @@ class PaymentController extends Controller
             }
 
             $user->update($userUpdate);
+            
+            // Notify all admins about the new deposit request
+            $packageName = $selectedPackage['name'] ?? 'Package';
+            \App\Traits\CreatesNotifications::notifyAdminsOfDepositRequest($user, $selectedPackage['deposit_amount'], $packageName);
         });
 
         return redirect()->route('dashboard')->with('success', 'Deposit request submitted successfully. Your account will be activated after payment verification.');
