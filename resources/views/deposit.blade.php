@@ -106,12 +106,12 @@
                         </div>
 
                         <!-- Terms and Conditions -->
-                        <div class="flex items-start">
-                            <div class="flex items-center h-5">
-                                <input id="terms" name="terms" type="checkbox" required class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                        <div class="flex items-start gap-3 sm:gap-2">
+                            <div class="flex items-center pt-0.5 sm:pt-0 flex-shrink-0">
+                                <input id="terms" name="terms" type="checkbox" required class="focus:ring-blue-500 h-5 w-5 sm:h-4 sm:w-4 text-blue-600 border-gray-300 rounded cursor-pointer flex-shrink-0">
                             </div>
-                            <div class="ml-3 text-sm">
-                                <label for="terms" class="text-gray-700">
+                            <div class="flex-1 min-w-0">
+                                <label for="terms" class="text-sm sm:text-sm text-gray-700 cursor-pointer leading-relaxed block">
                                     I confirm that this deposit is final, my initial capital remains locked, and withdrawals require referral completion per package rules.
                                 </label>
                             </div>

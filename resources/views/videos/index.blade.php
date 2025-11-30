@@ -58,7 +58,7 @@
                                     <span class="text-green-700 font-medium">Video Completed!</span>
                                 </div>
                             @else
-                                <a href="{{ route('videos.show', $task->video) }}" class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-4 py-2 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg">
+                                <a href="{{ route('videos.show', $task->video->id) }}" class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center px-4 py-2 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg">
                                     Watch Video
                                 </a>
                             @endif

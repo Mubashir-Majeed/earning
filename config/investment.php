@@ -53,9 +53,15 @@ return [
                 'description' => 'Refer one Pro ($100) member to enable withdrawals.',
             ],
             [
+                'package' => 'growth_50',
+                'count' => 2,
+                'description' => 'Alternatively, refer two Growth ($50) members.',
+                'is_alternative' => true,
+            ],
+            [
                 'package' => 'starter_35',
                 'count' => 3,
-                'description' => 'If no Pro referrals yet, refer three Starter ($35) members.',
+                'description' => 'Alternatively, refer three Starter ($35) members.',
                 'is_alternative' => true,
             ],
         ],

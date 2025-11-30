@@ -52,7 +52,7 @@
         .sidebar-container > * {
             position: relative;
             z-index: 1;
-        }
+            }
 
         .sidebar-header {
             background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(129,140,248,0.25));
@@ -70,7 +70,7 @@
         .sidebar-nav::-webkit-scrollbar-thumb {
             background: rgba(148,163,184,0.35);
             border-radius: 999px;
-        }
+            }
 
         .sidebar-title {
             letter-spacing: 0.3em;
@@ -105,7 +105,7 @@
             width: 2.3rem;
             height: 2.3rem;
             border-radius: 1rem;
-            display: flex;
+                display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(148,163,184,0.25);
@@ -120,7 +120,7 @@
         .sidebar-link:hover .sidebar-icon {
             background: linear-gradient(135deg, rgba(59,130,246,0.6), rgba(129,140,248,0.6));
             color: #ffffff;
-        }
+            }
         .sidebar-link::after {
             content: '';
             position: absolute;
@@ -163,7 +163,7 @@
             border-bottom: 1px solid rgba(241,245,249,0.7);
             box-shadow: 0 20px 40px -24px rgba(15,23,42,0.25);
         }
-
+        
         @media (min-width: 1024px) {
             body #sidebar { display: flex !important; width: 18rem !important; }
             body #bottom-nav { display: none !important; }
@@ -246,7 +246,7 @@
                         <div class="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
                             <i class="fas fa-user"></i>
                         </div>
-                        <div class="flex-1">
+                    <div class="flex-1">
                             <p class="text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-slate-500">Member</p>
                         </div>
@@ -307,13 +307,13 @@
             @foreach($bottomLinks as $link)
                 @php $active = request()->routeIs($link['active']); @endphp
                 <a href="{{ route($link['route']) }}" class="flex flex-col items-center justify-center flex-1 h-full min-w-0 relative group transition-all duration-200 {{ $active ? 'text-blue-200' : 'text-slate-300 hover:text-blue-200' }}">
-                    <div class="relative">
+                <div class="relative">
                         @if($active)
                             <div class="absolute -top-1 right-0 w-full h-full rounded-2xl border border-blue-300/40 bg-blue-500/10"></div>
-                        @endif
+                    @endif
                         <div class="w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-200 {{ $active ? 'bg-blue-500/15 border-blue-300/40 text-blue-200 shadow-lg shadow-blue-500/20' : 'border-transparent group-hover:bg-white/10' }}">
                             <i class="fas {{ $link['icon'] }} text-lg"></i>
-                        </div>
+                </div>
                     </div>
                     <span class="hidden text-[10px] font-semibold mt-1 tracking-[0.2em] uppercase {{ $active ? 'text-blue-200' : 'text-slate-300' }}">{{ $link['label'] }}</span>
                 </a>
@@ -385,18 +385,18 @@
                         // Hide dropdown
                         dropdown.classList.add('hidden');
                         console.log('Dropdown hidden');
-                    }
-                });
+            }
+        });
 
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
                     if (dropdown && !dropdown.classList.contains('hidden')) {
                         if (!dropdown.contains(e.target) && !menuButton.contains(e.target)) {
-                            dropdown.classList.add('hidden');
+                dropdown.classList.add('hidden');
                             console.log('Dropdown closed by outside click');
                         }
-                    }
-                });
+            }
+        });
             } else {
                 console.error('Menu button or dropdown not found', { menuButton, dropdown });
             }

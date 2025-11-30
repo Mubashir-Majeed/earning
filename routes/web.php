@@ -61,6 +61,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/videos/{video}/stats', [AdminController::class, 'videoStats'])->name('videos.stats');
     Route::get('/videos/create', [AdminController::class, 'createVideo'])->name('videos.create');
     Route::post('/videos', [AdminController::class, 'storeVideo'])->name('videos.store');
+    Route::get('/videos/{video}/edit', [AdminController::class, 'editVideo'])->name('videos.edit');
+    Route::put('/videos/{video}', [AdminController::class, 'updateVideo'])->name('videos.update');
     Route::get('/deposits', [AdminController::class, 'deposits'])->name('deposits');
     Route::get('/withdrawals', [AdminController::class, 'withdrawals'])->name('withdrawals');
     Route::post('/deposits/{deposit}/complete', [AdminController::class, 'completeDeposit'])->name('deposits.complete');

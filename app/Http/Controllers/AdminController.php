@@ -203,12 +203,49 @@ class AdminController extends Controller
         return back()->with('success', 'User deleted successfully.');
     }
 
-    public function videos()
+    public function videos(Request $request)
     {
         $this->checkAdminRole();
         
-        $videos = Video::paginate(20);
-        return view('admin.videos', compact('videos'));
+        $query = Video::query();
+
+        // Search filter - title or category
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Category filter
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $videos = $query->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
+
+        // Get all unique categories for the filter dropdown
+        $categories = Video::select('category')
+            ->distinct()
+            ->whereNotNull('category')
+            ->orderBy('category')
+            ->pluck('category')
+            ->toArray();
+
+        return view('admin.videos', compact('videos', 'categories'));
     }
 
     public function videoStats(Video $video)
@@ -270,7 +307,7 @@ class AdminController extends Controller
         $source = Video::detectVideoSource($validated['youtube_url']);
         if ($source) {
             $validated['platform'] = $source['platform'];
-            if (empty($validated['youtube_id'])) {
+        if (empty($validated['youtube_id'])) {
                 $validated['youtube_id'] = $source['video_id'];
             }
         }
@@ -311,6 +348,91 @@ class AdminController extends Controller
         return redirect()->route('admin.videos')->with('success', 'Video added successfully.');
     }
 
+    public function editVideo(Video $video)
+    {
+        $this->checkAdminRole();
+        return view('admin.video-edit', compact('video'));
+    }
+
+    public function updateVideo(Request $request, Video $video)
+    {
+        $this->checkAdminRole();
+        
+        // Custom validation for supported video URLs
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'youtube_url' => [
+                'required',
+                'url',
+                function ($attribute, $value, $fail) {
+                    // Check if it's a supported video URL
+                    $source = Video::detectVideoSource($value);
+                    if (!$source) {
+                        $fail('The video URL must be a valid YouTube (watch/shorts) or TikTok link.');
+                    }
+                },
+            ],
+            'youtube_id' => 'nullable|string|max:50',
+            'category' => 'required|string|max:50',
+            'thumbnail_url' => 'nullable|url',
+            'thumbnail' => 'nullable|image|max:2048',
+            'duration' => 'required|integer|min:1',
+            'dollar_value' => 'required|numeric|min:0.01',
+            'dollar_value_starter' => 'nullable|numeric|min:0.01',
+            'dollar_value_growth' => 'nullable|numeric|min:0.01',
+            'dollar_value_pro' => 'nullable|numeric|min:0.01',
+            'assigned_date' => 'nullable|date',
+            'max_watches_per_day' => 'nullable|integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        $validated = $request->only([
+            'title', 'description', 'youtube_url', 'youtube_id', 'category',
+            'thumbnail_url', 'duration', 'dollar_value',
+            'dollar_value_starter', 'dollar_value_growth', 'dollar_value_pro',
+            'assigned_date',
+            'max_watches_per_day'
+        ]);
+
+        // Detect platform & extract ID from URL
+        $source = Video::detectVideoSource($validated['youtube_url']);
+        if ($source) {
+            $validated['platform'] = $source['platform'];
+            if (empty($validated['youtube_id'])) {
+                $validated['youtube_id'] = $source['video_id'];
+            }
+        }
+
+        $validated['dollar_value_starter'] = $validated['dollar_value_starter'] ?? $validated['dollar_value'];
+        $validated['dollar_value_growth'] = $validated['dollar_value_growth'] ?? $validated['dollar_value'];
+        $validated['dollar_value_pro'] = $validated['dollar_value_pro'] ?? $validated['dollar_value'];
+
+        // Validate that youtube_id was successfully extracted
+        if (empty($validated['youtube_id'])) {
+            return back()
+                ->withInput()
+                ->withErrors(['youtube_url' => 'Could not extract a video ID from the provided URL. Please check the URL format.']);
+        }
+
+        // If a file thumbnail is uploaded, store it and override thumbnail_url
+        if ($request->hasFile('thumbnail')) {
+            $path = $request->file('thumbnail')->store('thumbnails', 'public');
+            $validated['thumbnail_url'] = asset('storage/' . $path);
+        }
+
+        // Set default max_watches_per_day if not provided
+        if (empty($validated['max_watches_per_day'])) {
+            $validated['max_watches_per_day'] = 1;
+        }
+
+        // Handle is_active checkbox (checkbox sends value only if checked)
+        $validated['is_active'] = $request->has('is_active') && $request->is_active == '1';
+
+        $video->update($validated);
+        return redirect()->route('admin.videos')->with('success', 'Video updated successfully.');
+    }
+
     public function withdrawals()
     {
         $this->checkAdminRole();
@@ -323,14 +445,42 @@ class AdminController extends Controller
         return view('admin.withdrawals', compact('withdrawals'));
     }
 
-    public function deposits()
+    public function deposits(Request $request)
     {
         $this->checkAdminRole();
 
-        $deposits = Deposit::with('user')
-            ->whereHas('user', fn ($q) => $q->withoutAdmins())
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Deposit::with('user')
+            ->whereHas('user', fn ($q) => $q->withoutAdmins());
+
+        // Search filter - user name, email, or transaction ID
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                // Search by user name or email
+                $q->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%")
+                              ->orWhere('email', 'like', "%{$search}%");
+                })
+                // Search by transaction ID (payment_id or in notes)
+                ->orWhere('payment_id', 'like', "%{$search}%")
+                ->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Amount range filter
+        if ($request->filled('amount_range')) {
+            $amount = (float) $request->amount_range;
+            $query->where('amount', $amount);
+        }
+
+        $deposits = $query->orderBy('created_at', 'desc')
+            ->paginate(20)
+            ->withQueryString();
 
         $packages = config('investment.packages', []);
 
@@ -372,36 +522,41 @@ class AdminController extends Controller
                 'wallet_bound_at' => $deposit->user->wallet_bound_at ?? now(),
             ]);
 
-            // Award referral bonus if user has a referrer and hasn't been awarded yet
+            // Award referral bonus ONLY if user has a referrer, deposit is Pro package ($100), and hasn't been awarded yet
             if ($deposit->user->referrer_id) {
-                $referrer = $deposit->user->referrer;
+                // Check if this is a Pro package deposit ($100 or pro_100)
+                $isProPackage = ($packageCode === 'pro_100') || ((float) $deposit->amount === 100.00);
                 
-                // Check if referral bonus has already been awarded for this user
-                $alreadyAwarded = \App\Models\UserEarning::where('user_id', $referrer->id)
-                    ->where('type', 'referral')
-                    ->where('description', 'like', "%{$deposit->user->name}%")
-                    ->exists();
-                
-                if (!$alreadyAwarded) {
-                    // Award $5 to referrer
-                    $referrer->increment('balance', 5.00);
+                if ($isProPackage) {
+                    $referrer = $deposit->user->referrer;
                     
-                    // Increment referrer's referral count (only if not already counted)
-                    $referrer->increment('referrals_count');
+                    // Check if referral bonus has already been awarded for this user
+                    $alreadyAwarded = \App\Models\UserEarning::where('user_id', $referrer->id)
+                        ->where('type', 'referral')
+                        ->where('description', 'like', "%{$deposit->user->name}%")
+                        ->exists();
                     
-                    // Create earning record for referrer
-                    \App\Models\UserEarning::create([
-                        'user_id' => $referrer->id,
-                        'dollar_value' => 5.00,
-                        'type' => 'referral',
-                        'description' => "Referral bonus for {$deposit->user->name}",
-                        'earned_date' => now()->toDateString(),
-                    ]);
-                } else {
-                    // Sync the count to ensure accuracy (in case of data inconsistency)
-                    $actualCount = $referrer->actual_referrals_count;
-                    if ($referrer->referrals_count != $actualCount) {
-                        $referrer->update(['referrals_count' => $actualCount]);
+                    if (!$alreadyAwarded) {
+                        // Award $5 to referrer only when referred user deposits Pro package
+                        $referrer->increment('balance', 5.00);
+                        
+                        // Increment referrer's referral count (only if not already counted)
+                        $referrer->increment('referrals_count');
+                        
+                        // Create earning record for referrer
+                        \App\Models\UserEarning::create([
+                            'user_id' => $referrer->id,
+                            'dollar_value' => 5.00,
+                            'type' => 'referral',
+                            'description' => "Referral bonus for {$deposit->user->name} (Pro package deposit)",
+                            'earned_date' => now()->toDateString(),
+                        ]);
+                    } else {
+                        // Sync the count to ensure accuracy (in case of data inconsistency)
+                        $actualCount = $referrer->actual_referrals_count;
+                        if ($referrer->referrals_count != $actualCount) {
+                            $referrer->update(['referrals_count' => $actualCount]);
+                        }
                     }
                 }
             }
@@ -614,7 +769,7 @@ class AdminController extends Controller
             $request->validate([
                 "packages.$code.deposit_amount" => 'nullable|numeric|min:1',
                 "packages.$code.withdrawal_cap" => 'nullable|numeric|min:0',
-            ]);
+        ]);
         }
 
         $normalizedPackages = [];

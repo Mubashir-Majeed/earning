@@ -178,7 +178,7 @@
                                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div>
+                    <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">Withdrawal Cap ($)</label>
                                     <input type="number"
                                            name="packages[{{ $code }}][withdrawal_cap]"

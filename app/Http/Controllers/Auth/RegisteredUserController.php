@@ -51,10 +51,7 @@ class RegisteredUserController extends Controller
             'level' => 1, // Default to level 1
         ]);
 
-        // Award bonus to new user if they have a referrer
-        if ($referrer) {
-            $user->increment('balance', 0.10); // $0.10 bonus
-        }
+        // No bonus awarded to new users - they must deposit Pro package for referrer to earn
 
         event(new Registered($user));
 

@@ -23,37 +23,40 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form method="GET" action="{{ route('admin.videos') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Search Videos</label>
-                <input type="text" placeholder="Search by title or category..." 
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by title or category..." 
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select name="category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Categories</option>
-                    <option value="heroism">Heroism</option>
-                    <option value="nation-builders">Nation Builders</option>
-                    <option value="histories">Histories</option>
-                    <option value="mysteries">Mysteries</option>
-                    <option value="education">Education</option>
+                    @foreach($categories ?? [] as $cat)
+                        <option value="{{ $cat }}" {{ request('category') === $cat ? 'selected' : '' }}>{{ ucfirst(str_replace('-', ' ', $cat)) }}</option>
+                    @endforeach
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                 </select>
             </div>
-            <div class="flex items-end">
-                <button class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                     <i class="fas fa-search mr-2"></i>Filter
                 </button>
+                @if(request()->hasAny(['search', 'category', 'status']))
+                    <a href="{{ route('admin.videos') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Clear
+                    </a>
+                @endif
             </div>
-        </div>
+        </form>
     </div>
 
     <!-- Videos Grid -->
@@ -87,9 +90,9 @@
                     <div class="flex items-start justify-between mb-3">
                         <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ $video->title }}</h3>
                         <div class="flex space-x-1 ml-3">
-                            <button class="text-blue-600 hover:text-blue-900 transition-colors" title="Edit">
+                            <a href="{{ route('admin.videos.edit', $video) }}" class="text-blue-600 hover:text-blue-900 transition-colors" title="Edit">
                                 <i class="fas fa-edit"></i>
-                            </button>
+                            </a>
                             <button class="text-red-600 hover:text-red-900 transition-colors" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>

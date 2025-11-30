@@ -26,36 +26,41 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form method="GET" action="{{ route('admin.deposits') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
-                <input type="text" placeholder="Search by user name or email..."
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search Users / Transaction ID</label>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by user name, email, or transaction ID..."
                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
-                    <option value="failed">Failed</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Failed</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Amount Range</label>
-                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select name="amount_range" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Amounts</option>
-                    <option value="35">$35</option>
-                    <option value="50">$50</option>
-                    <option value="100">$100</option>
+                    <option value="35" {{ request('amount_range') == '35' ? 'selected' : '' }}>$35</option>
+                    <option value="50" {{ request('amount_range') == '50' ? 'selected' : '' }}>$50</option>
+                    <option value="100" {{ request('amount_range') == '100' ? 'selected' : '' }}>$100</option>
                 </select>
             </div>
-            <div class="flex items-end">
-                <button class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+            <div class="flex items-end gap-2">
+                <button type="submit" class="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                     <i class="fas fa-search mr-2"></i>Filter
                 </button>
+                @if(request()->hasAny(['search', 'status', 'amount_range']))
+                    <a href="{{ route('admin.deposits') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Clear
+                    </a>
+                @endif
             </div>
-        </div>
+        </form>
     </div>
 
     <!-- Deposits Table -->

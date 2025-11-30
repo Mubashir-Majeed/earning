@@ -116,25 +116,26 @@
             </div>
             <div>
                 <h2 class="text-2xl font-bold">Refer & Earn</h2>
-                <p class="text-blue-100">Earn $5 for each friend who joins and makes their first deposit!</p>
+                <p class="text-blue-100">Earn $5 when your referred friend deposits Pro package!</p>
             </div>
         </div>
         
         <div class="bg-white bg-opacity-10 rounded-lg p-4 mb-4">
             <label class="block text-sm font-medium text-blue-100 mb-2">Your Referral Link</label>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <input 
                     type="text" 
                     readonly 
                     id="referralLink"
-                    class="flex-1 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg px-4 py-3 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50" 
+                    class="flex-1 bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg px-4 py-3 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 text-sm sm:text-base" 
                     value="{{ $referralLink }}" 
                 />
                 <button 
                     onclick="copyReferralLink()" 
-                    class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    id="copyButton"
+                    class="bg-white text-blue-600 px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap flex items-center justify-center"
                 >
-                    <i class="fas fa-copy mr-2"></i>Copy Link
+                    <i class="fas fa-copy mr-2"></i><span class="hidden sm:inline">Copy Link</span><span class="sm:hidden">Copy</span>
                 </button>
             </div>
         </div>
@@ -143,11 +144,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="flex items-center">
                 <i class="fas fa-check-circle text-green-300 mr-3"></i>
-                <span class="text-sm">You earn $5 when they deposit</span>
-            </div>
-            <div class="flex items-center">
-                <i class="fas fa-check-circle text-green-300 mr-3"></i>
-                <span class="text-sm">They get $0.10 bonus</span>
+                <span class="text-sm">You earn $5 when they deposit Pro package</span>
             </div>
             <div class="flex items-center">
                 <i class="fas fa-check-circle text-green-300 mr-3"></i>
@@ -156,6 +153,10 @@
             <div class="flex items-center">
                 <i class="fas fa-check-circle text-green-300 mr-3"></i>
                 <span class="text-sm">Instant earnings</span>
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-300 mr-3"></i>
+                <span class="text-sm">Track all your referrals</span>
             </div>
         </div>
     </div>
@@ -240,30 +241,46 @@
     <script>
         function copyReferralLink() {
             const linkInput = document.getElementById('referralLink');
-            linkInput.select();
-            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            const button = document.getElementById('copyButton');
             
+            // For mobile devices, try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(linkInput.value).then(function() {
+                    showCopySuccess(button);
+                }).catch(function() {
+                    // Fallback to execCommand
+                    fallbackCopy(linkInput, button);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopy(linkInput, button);
+            }
+        }
+        
+        function fallbackCopy(input, button) {
             try {
+                input.select();
+                input.setSelectionRange(0, 99999); // For mobile devices
                 document.execCommand('copy');
-                
-                // Show success message
-                const button = event.target.closest('button');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
-                button.classList.add('bg-green-600');
-                button.classList.remove('bg-white', 'text-blue-600');
-                button.classList.add('text-white');
-                
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.classList.remove('bg-green-600');
-                    button.classList.add('bg-white', 'text-blue-600');
-                    button.classList.remove('text-white');
-                }, 2000);
-                
+                showCopySuccess(button);
             } catch (err) {
                 alert('Failed to copy link. Please copy manually.');
             }
+        }
+        
+        function showCopySuccess(button) {
+            const originalHTML = button.innerHTML;
+            const isMobile = window.innerWidth < 640;
+            
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>' + (isMobile ? 'Copied!' : 'Copied!');
+            button.classList.remove('bg-white', 'text-blue-600');
+            button.classList.add('bg-green-600', 'text-white');
+            
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+                button.classList.remove('bg-green-600', 'text-white');
+                button.classList.add('bg-white', 'text-blue-600');
+            }, 2000);
         }
     </script>
 @endsection

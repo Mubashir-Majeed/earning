@@ -25,8 +25,10 @@ class VideoController extends Controller
             return redirect()->route('deposit')->with('error', 'Please make your initial deposit to access video tasks.');
         }
 
-        // Show all active videos instead of just assigned tasks
+        // Show only videos assigned to today's date
+        $today = Carbon::today();
         $videos = Video::active()
+            ->whereDate('assigned_date', $today)
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -62,6 +64,12 @@ class VideoController extends Controller
         // Check if video is active
         if (!$video->is_active) {
             return redirect()->route('videos.index')->with('error', 'This video is not available.');
+        }
+
+        // Check if video is assigned to today's date
+        $today = Carbon::today();
+        if (!$video->assigned_date || !$video->assigned_date->isSameDay($today)) {
+            return redirect()->route('videos.index')->with('error', 'This video is not available for today.');
         }
 
         // Check if user has completed this video today
@@ -104,6 +112,12 @@ class VideoController extends Controller
         // Check if video is active
         if (!$video->is_active) {
             return response()->json(['error' => 'Video is not available'], 404);
+        }
+
+        // Check if video is assigned to today's date
+        $today = Carbon::today();
+        if (!$video->assigned_date || !$video->assigned_date->isSameDay($today)) {
+            return response()->json(['error' => 'This video is not available for today'], 404);
         }
 
         // Check if user has already completed this video today
@@ -151,6 +165,12 @@ class VideoController extends Controller
 
         if (!$watch) {
             return response()->json(['error' => 'Watch session not found'], 404);
+        }
+
+        // Check if video is assigned to today's date
+        $today = Carbon::today();
+        if (!$video->assigned_date || !$video->assigned_date->isSameDay($today)) {
+            return response()->json(['error' => 'This video is not available for today'], 404);
         }
 
         // Validate watch duration - user must watch the full video duration

@@ -25,14 +25,14 @@
                                         class="w-full h-full">
                                     </iframe>
                                 @else
-                                    <iframe 
-                                        id="youtube-player"
+                                <iframe 
+                                    id="youtube-player"
                                         src="{{ $embedUrl }}&enablejsapi=1&controls=0&showinfo=0&rel=0&modestbranding=1" 
-                                        frameborder="0" 
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                        allowfullscreen
-                                        class="w-full h-full">
-                                    </iframe>
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen
+                                    class="w-full h-full">
+                                </iframe>
                                 @endif
                                 <!-- Custom overlay to control video -->
                                 <div id="video-overlay" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -161,7 +161,7 @@
 
 @section('scripts')
     @if($video->isYouTube())
-        <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     @endif
     <script>
         let player;
