@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Deposit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
@@ -119,6 +120,25 @@ class PaymentController extends Controller
             $packageName = $selectedPackage['name'] ?? 'Package';
             $notificationAmount = $isRedeposit ? $depositAmount : $selectedPackage['deposit_amount'];
             \App\Traits\CreatesNotifications::notifyAdminsOfDepositRequest($user, $notificationAmount, $packageName);
+            
+            // Send email to all admins
+            $admins = \App\Models\User::role('admin')->get();
+            foreach ($admins as $admin) {
+                try {
+                    \Mail::to($admin->email)->send(
+                        new \App\Mail\AdminDepositNotificationMail(
+                            $user,
+                            $notificationAmount,
+                            $packageName,
+                            $validated['transaction_reference'],
+                            $walletAddress
+                        )
+                    );
+                } catch (\Exception $e) {
+                    // Log error but don't fail the deposit
+                    \Log::error('Failed to send deposit notification email to admin: ' . $e->getMessage());
+                }
+            }
         });
 
         $successMessage = $isRedeposit 

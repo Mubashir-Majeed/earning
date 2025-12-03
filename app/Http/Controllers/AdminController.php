@@ -11,6 +11,7 @@ use App\Models\UserEarning;
 use App\Traits\CreatesNotifications;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
@@ -589,6 +590,20 @@ class AdminController extends Controller
             // Create notification for deposit approval
             $packageName = config("investment.packages.{$packageCode}.name", "Package");
             self::notifyDepositApproved($deposit->user, $deposit->amount, $packageName);
+            
+            // Send email to user
+            try {
+                \Mail::to($deposit->user->email)->send(
+                    new \App\Mail\DepositApprovedMail(
+                        $deposit->user->name,
+                        $deposit->amount,
+                        $packageName,
+                        $isUpgrade
+                    )
+                );
+            } catch (\Exception $e) {
+                \Log::error('Failed to send deposit approved email to user: ' . $e->getMessage());
+            }
         });
 
         return redirect()->route('admin.deposits')->with('success', 'Deposit completed and user balance credited.');
@@ -644,6 +659,22 @@ class AdminController extends Controller
         
         // Create notification for withdrawal approval
         self::notifyWithdrawalApproved($withdrawal->user, $withdrawal->amount);
+        
+        // Send email to user
+        try {
+            \Mail::to($withdrawal->user->email)->send(
+                new \App\Mail\WithdrawalApprovedMail(
+                    $withdrawal->user->name,
+                    $withdrawal->amount,
+                    $withdrawal->net_amount,
+                    $withdrawal->fee_amount,
+                    $withdrawal->withdrawal_details,
+                    $withdrawal->id
+                )
+            );
+        } catch (\Exception $e) {
+            \Log::error('Failed to send withdrawal approved email to user: ' . $e->getMessage());
+        }
 
         return redirect()->route('admin.withdrawals')->with('success', 'Withdrawal approved and completed successfully.');
     }
