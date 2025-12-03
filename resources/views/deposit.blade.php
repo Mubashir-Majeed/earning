@@ -8,8 +8,20 @@
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
             <div class="p-6">
                 <div class="mb-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Choose Your Earn Quest Package</h3>
-                    <p class="text-gray-600">Select a package to unlock video tasks, referral rewards, and withdrawals. Your deposit stays as locked capital while you earn on top.</p>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">
+                        @if($isRedeposit)
+                            Upgrade Your Package
+                        @else
+                            Choose Your Earn Quest Package
+                        @endif
+                    </h3>
+                    <p class="text-gray-600">
+                        @if($isRedeposit)
+                            Upgrade to a higher package by adding the difference amount. Your deposit stays as locked capital while you earn on top.
+                        @else
+                            Select a package to unlock video tasks, referral rewards, and withdrawals. Your deposit stays as locked capital while you earn on top.
+                        @endif
+                    </p>
                 </div>
 
                 @if($errors->any())
@@ -24,7 +36,14 @@
                 @endif
 
                 @php
-                    $selectedPackage = old('package_code', $user->pending_package_code ?? $user->investment_package ?? 'starter_35');
+                    // For redeposit, select first available upgrade package
+                    // For new deposit, use default or pending
+                    if ($isRedeposit && count($packages) > 0) {
+                        $firstUpgradeCode = array_key_first($packages);
+                        $selectedPackage = old('package_code', $user->pending_package_code ?? $firstUpgradeCode);
+                    } else {
+                        $selectedPackage = old('package_code', $user->pending_package_code ?? $user->investment_package ?? 'starter_35');
+                    }
                 @endphp
 
                 <form action="{{ route('payment.deposit') }}" method="POST" id="payment-form" enctype="multipart/form-data">
@@ -32,25 +51,57 @@
                     <div class="space-y-8">
                         <!-- Package Selection -->
                         <div>
-                            <h4 class="text-sm font-semibold text-gray-800 mb-3">Packages</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                @foreach($packages as $code => $package)
-                                    @php $isActive = $selectedPackage === $code; @endphp
-                                    <label data-package-card class="package-card relative block border rounded-xl p-4 cursor-pointer transition {{ $isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300' }}">
-                                        <input type="radio" name="package_code" value="{{ $code }}" class="sr-only" {{ $isActive ? 'checked' : '' }}>
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="text-sm font-semibold text-gray-900">{{ $package['name'] }} Package</p>
-                                                <p class="text-2xl font-bold text-blue-600 mt-1">${{ number_format($package['deposit_amount'], 2) }}</p>
+                            <h4 class="text-sm font-semibold text-gray-800 mb-3">
+                                @if($isRedeposit)
+                                    Available Upgrades
+                                @else
+                                    Packages
+                                @endif
+                            </h4>
+                            @if(count($packages) > 0)
+                                <div class="grid grid-cols-1 md:grid-cols-{{ count($packages) > 2 ? '3' : count($packages) }} gap-4">
+                                    @foreach($packages as $code => $package)
+                                        @php $isActive = $selectedPackage === $code; @endphp
+                                        <label data-package-card class="package-card relative block border rounded-xl p-4 cursor-pointer transition {{ $isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300' }}">
+                                            <input type="radio" name="package_code" value="{{ $code }}" class="sr-only" {{ $isActive ? 'checked' : '' }}>
+                                            <div class="flex items-start justify-between">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-gray-900">{{ $package['name'] }} Package</p>
+                                                    @if($isRedeposit && isset($package['amount_to_add']))
+                                                        <p class="text-2xl font-bold text-blue-600 mt-1">+${{ number_format($package['amount_to_add'], 2) }}</p>
+                                                        <p class="text-xs text-gray-500 mt-1">Add ${{ number_format($package['amount_to_add'], 2) }} to upgrade</p>
+                                                    @else
+                                                        <p class="text-2xl font-bold text-blue-600 mt-1">${{ number_format($package['deposit_amount'], 2) }}</p>
+                                                    @endif
+                                                </div>
+                                                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                                                    <i class="fas fa-gem"></i>
+                                                </div>
                                             </div>
-                                            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                                <i class="fas fa-gem"></i>
-                                            </div>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-4 leading-snug">{{ $package['description'] }}</p>
-                                    </label>
-                                @endforeach
-                            </div>
+                                            <p class="text-xs text-gray-500 mt-4 leading-snug">{{ $package['description'] }}</p>
+                                            @if($isRedeposit && isset($package['amount_to_add']))
+                                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                                    <p class="text-xs text-gray-600">
+                                                        <span class="font-medium">Current:</span> ${{ number_format($package['current_package_amount'], 2) }} → 
+                                                        <span class="font-medium">New:</span> ${{ number_format($package['deposit_amount'], 2) }}
+                                                    </p>
+                                                </div>
+                                            @endif
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="border border-gray-200 rounded-xl p-6 text-center bg-gray-50">
+                                    <i class="fas fa-info-circle text-gray-400 text-3xl mb-3"></i>
+                                    <p class="text-gray-600 font-medium">
+                                        @if($isRedeposit)
+                                            No upgrade packages available. You already have the highest package.
+                                        @else
+                                            No packages available at the moment. Please contact support.
+                                        @endif
+                                    </p>
+                                </div>
+                            @endif
                             @error('package_code')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -68,7 +119,21 @@
                                         Copy
                                     </button>
                                 </div>
-                                <p class="text-xs text-blue-700 mb-2">Send your package amount to this BEP20 address. It is configured by Earn Quest and cannot be edited by members.</p>
+                                <p class="text-xs text-blue-700 mb-2">
+                                    @if($isRedeposit)
+                                        Send the upgrade amount (difference) to this BEP20 address. It is configured by Earn Quest and cannot be edited by members.
+                                    @else
+                                        Send your package amount to this BEP20 address. It is configured by Earn Quest and cannot be edited by members.
+                                    @endif
+                                </p>
+                                @if($isRedeposit && count($packages) > 0)
+                                    <div class="mb-2 p-2 bg-blue-100 rounded-lg">
+                                        <p class="text-xs font-semibold text-blue-900">
+                                            Amount to Send: <span class="text-base font-bold" data-amount-display>$0.00</span>
+                                        </p>
+                                        <p class="text-xs text-blue-700 mt-1">Select a package above to see the exact amount</p>
+                                    </div>
+                                @endif
                                 <input type="text" value="{{ $platformWallet }}" readonly class="w-full px-4 py-3 border border-blue-200 rounded-lg bg-white font-mono text-sm" data-wallet-value>
                             </div>
                         @else
@@ -122,9 +187,19 @@
                             <a href="{{ route('dashboard') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
                                 Cancel
                             </a>
-                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                Submit Deposit Request
-                            </button>
+                            @if(count($packages) > 0)
+                                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    @if($isRedeposit)
+                                        Submit Upgrade Request
+                                    @else
+                                        Submit Deposit Request
+                                    @endif
+                                </button>
+                            @else
+                                <button type="button" disabled class="bg-gray-400 text-white px-6 py-2 rounded-md text-sm font-medium cursor-not-allowed">
+                                    No Packages Available
+                                </button>
+                            @endif
                         </div>
                     </div>
                 </form>
@@ -165,13 +240,41 @@
                 card.classList.toggle('border-gray-200', !isChecked);
                 card.classList.toggle('hover:border-blue-300', !isChecked);
             });
+            
+            // Update amount display for redeposit
+            @if($isRedeposit && count($packages) > 0)
+            const amountDisplay = document.querySelector('[data-amount-display]');
+            if (amountDisplay) {
+                const checkedInput = document.querySelector('input[name="package_code"]:checked');
+                if (checkedInput) {
+                    const card = checkedInput.closest('[data-package-card]');
+                    const amountText = card.querySelector('.text-2xl').textContent;
+                    // Extract amount from text like "+$15.00" or "$50.00"
+                    const amountMatch = amountText.match(/[\d.]+/);
+                    if (amountMatch) {
+                        const amount = parseFloat(amountMatch[0]);
+                        amountDisplay.textContent = '$' + amount.toFixed(2);
+                    }
+                } else {
+                    amountDisplay.textContent = '$0.00';
+                }
+            }
+            @endif
         }
 
         inputs.forEach(input => {
             input.addEventListener('change', refreshCards);
         });
 
+        // Initial refresh to set default selected package amount
         refreshCards();
+        
+        // Also update on page load if a package is already selected
+        @if($isRedeposit && count($packages) > 0)
+        setTimeout(() => {
+            refreshCards();
+        }, 100);
+        @endif
 
         const copyBtn = document.querySelector('[data-wallet-copy]');
         const walletInput = document.querySelector('[data-wallet-value]');

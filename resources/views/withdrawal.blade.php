@@ -194,6 +194,7 @@
             <!-- Withdrawal Form -->
             <form action="{{ route('withdrawal.request') }}" method="POST" id="withdrawal-form">
                 @csrf
+                <input type="hidden" name="otp_verified" id="otp_verified" value="0">
                 <div class="space-y-6">
                     <!-- Amount -->
                     <div>
@@ -374,24 +375,387 @@
         // Initial calculation
         updateWithdrawalSummary();
         
-        // Form validation
-        document.getElementById('withdrawal-form').addEventListener('submit', function(e) {
-            const amount = parseFloat(amountInput.value);
-            const maxAmount = {{ max(0, $maxWithdrawable) }};
-            
-            if (amount < {{ $minWithdrawalValue }}) {
-                e.preventDefault();
-                alert('Minimum withdrawal amount is ${{ number_format($minWithdrawalValue, 2) }}');
-                return;
-            }
-            
-            if (amount > maxAmount) {
-                e.preventDefault();
-                alert('Withdrawal amount cannot exceed your withdrawable balance of $' + maxAmount.toFixed(2));
-                return;
-            }
-            
-        });
+        // Form validation is now handled in the OTP modal section below
     }
+
+    // OTP Verification Modal
+    let withdrawalOtpTimer = null;
+    let withdrawalTimeLeft = 180;
+    let isWithdrawalOtpVerified = false;
+
+    // Send OTP for withdrawal
+    async function sendWithdrawalOtp(isResend = false) {
+        const sendBtn = document.getElementById('modal-send-otp-btn');
+        const sendText = document.getElementById('modal-send-otp-text');
+        const sendSpinner = document.getElementById('modal-send-otp-spinner');
+        const resendBtn = document.getElementById('modal-resend-otp-btn');
+
+        if (sendBtn) {
+            sendBtn.disabled = true;
+            sendText.classList.add('hidden');
+            sendSpinner.classList.remove('hidden');
+        }
+
+        try {
+            const response = await fetch('{{ route("withdrawal.send-otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showWithdrawalMessage('modal-otp-message', data.message, 'success');
+                document.getElementById('modal-otp-input').focus();
+                
+                // Start timer
+                withdrawalTimeLeft = data.expires_in || 180;
+                startWithdrawalTimer();
+                
+                // Hide resend button initially
+                if (resendBtn) {
+                    resendBtn.classList.add('hidden');
+                }
+                
+                // Re-enable send button
+                if (sendBtn && isResend) {
+                    setTimeout(() => {
+                        sendBtn.disabled = false;
+                        sendText.classList.remove('hidden');
+                        sendSpinner.classList.add('hidden');
+                    }, 1000);
+                } else if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendText.classList.remove('hidden');
+                    sendSpinner.classList.add('hidden');
+                }
+            } else {
+                showWithdrawalMessage('modal-otp-message', data.message, 'error');
+                if (sendBtn) {
+                    if (data.retry_after) {
+                        setTimeout(() => {
+                            sendBtn.disabled = false;
+                            sendText.classList.remove('hidden');
+                            sendSpinner.classList.add('hidden');
+                        }, data.retry_after * 1000);
+                    } else {
+                        sendBtn.disabled = false;
+                        sendText.classList.remove('hidden');
+                        sendSpinner.classList.add('hidden');
+                    }
+                }
+            }
+        } catch (error) {
+            showWithdrawalMessage('modal-otp-message', 'An error occurred. Please try again.', 'error');
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendText.classList.remove('hidden');
+                sendSpinner.classList.add('hidden');
+            }
+        }
+    }
+
+    // Verify OTP for withdrawal
+    async function verifyWithdrawalOtp() {
+        const otpInput = document.getElementById('modal-otp-input');
+        const otp = otpInput.value.trim();
+
+        if (otp.length !== 6) {
+            showWithdrawalMessage('modal-otp-verify-message', 'Please enter a 6-digit OTP code.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('{{ route("withdrawal.verify-otp") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ otp })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                isWithdrawalOtpVerified = true;
+                document.getElementById('otp_verified').value = '1';
+                showWithdrawalMessage('modal-otp-verify-message', data.message, 'success');
+                otpInput.classList.add('border-green-500');
+                otpInput.disabled = true;
+                clearWithdrawalTimer();
+                
+                // Close modal and submit form
+                setTimeout(() => {
+                    closeOtpModal();
+                    document.getElementById('withdrawal-form').submit();
+                }, 1000);
+            } else {
+                showWithdrawalMessage('modal-otp-verify-message', data.message, 'error');
+                otpInput.classList.add('border-red-500');
+                setTimeout(() => {
+                    otpInput.classList.remove('border-red-500');
+                }, 2000);
+            }
+        } catch (error) {
+            showWithdrawalMessage('modal-otp-verify-message', 'An error occurred. Please try again.', 'error');
+        }
+    }
+
+    // Timer functions
+    function startWithdrawalTimer() {
+        clearWithdrawalTimer();
+        updateWithdrawalTimerDisplay();
+        withdrawalOtpTimer = setInterval(() => {
+            withdrawalTimeLeft--;
+            updateWithdrawalTimerDisplay();
+            if (withdrawalTimeLeft <= 0) {
+                clearWithdrawalTimer();
+                const resendBtn = document.getElementById('modal-resend-otp-btn');
+                if (resendBtn) {
+                    resendBtn.classList.remove('hidden');
+                }
+            }
+        }, 1000);
+    }
+
+    function clearWithdrawalTimer() {
+        if (withdrawalOtpTimer) {
+            clearInterval(withdrawalOtpTimer);
+            withdrawalOtpTimer = null;
+        }
+    }
+
+    function updateWithdrawalTimerDisplay() {
+        const minutes = Math.floor(withdrawalTimeLeft / 60);
+        const seconds = withdrawalTimeLeft % 60;
+        const timerText = document.getElementById('modal-timer-text');
+        if (timerText) {
+            timerText.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            if (withdrawalTimeLeft <= 30) {
+                timerText.classList.add('text-red-600');
+            } else {
+                timerText.classList.remove('text-red-600');
+            }
+        }
+    }
+
+    // Modal functions
+    function openOtpModal() {
+        const modal = document.getElementById('otp-verification-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            // Auto-send OTP when modal opens
+            sendWithdrawalOtp();
+        }
+    }
+
+    function closeOtpModal() {
+        const modal = document.getElementById('otp-verification-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            clearWithdrawalTimer();
+        }
+    }
+
+    // Helper functions
+    function showWithdrawalMessage(elementId, message, type) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        element.classList.remove('hidden');
+        element.className = element.className.replace(/text-(red|green|blue)-600/g, '');
+        
+        if (type === 'success') {
+            element.className += ' text-green-600';
+            element.innerHTML = `<i class="fas fa-check-circle mr-1"></i>${message}`;
+        } else if (type === 'error') {
+            element.className += ' text-red-600';
+            element.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${message}`;
+        } else {
+            element.className += ' text-blue-600';
+            element.innerHTML = `<i class="fas fa-info-circle mr-1"></i>${message}`;
+        }
+    }
+
+    // Update form submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('withdrawal-form');
+        const otpInput = document.getElementById('modal-otp-input');
+        const amountInput = document.getElementById('amount');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Check if OTP is verified
+                if (!isWithdrawalOtpVerified) {
+                    e.preventDefault();
+                    
+                    // Validate form first
+                    const amount = parseFloat(amountInput.value);
+                    const maxAmount = {{ max(0, $maxWithdrawable) }};
+                    const minAmount = {{ $minWithdrawalValue }};
+                    
+                    if (!amount || isNaN(amount)) {
+                        alert('Please enter a valid withdrawal amount.');
+                        amountInput.focus();
+                        return false;
+                    }
+                    
+                    if (amount < minAmount) {
+                        alert('Minimum withdrawal amount is $' + minAmount.toFixed(2));
+                        amountInput.focus();
+                        return false;
+                    }
+                    
+                    if (amount > maxAmount) {
+                        alert('Withdrawal amount cannot exceed your withdrawable balance of $' + maxAmount.toFixed(2));
+                        amountInput.focus();
+                        return false;
+                    }
+                    
+                    // Check terms checkbox
+                    const termsCheckbox = document.getElementById('terms');
+                    if (!termsCheckbox.checked) {
+                        alert('Please agree to the Terms and Conditions.');
+                        termsCheckbox.focus();
+                        return false;
+                    }
+                    
+                    // Open OTP modal
+                    openOtpModal();
+                    return false;
+                }
+            });
+        }
+
+        // OTP input - auto verify on 6 digits
+        if (otpInput) {
+            otpInput.addEventListener('input', function() {
+                // Only allow numbers
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                if (this.value.length === 6 && !isWithdrawalOtpVerified) {
+                    verifyWithdrawalOtp();
+                }
+            });
+
+            // Allow Enter key to verify
+            otpInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && this.value.length === 6) {
+                    e.preventDefault();
+                    verifyWithdrawalOtp();
+                }
+            });
+        }
+
+        // Close modal on backdrop click
+        const modal = document.getElementById('otp-verification-modal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeOtpModal();
+                }
+            });
+        }
+    });
 </script>
+
+<!-- OTP Verification Modal -->
+<div id="otp-verification-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-fade-in">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900">Email Verification</h3>
+                <p class="text-sm text-gray-600 mt-1">Verify your email to complete withdrawal request</p>
+            </div>
+            <button type="button" onclick="closeOtpModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Email Display -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-xs font-semibold text-blue-800 uppercase tracking-wide mb-1">Verification Email</p>
+            <p class="text-sm text-gray-900 font-mono">{{ auth()->user()->email }}</p>
+        </div>
+
+        <!-- OTP Message -->
+        <div id="modal-otp-message" class="hidden"></div>
+
+        <!-- OTP Input Section -->
+        <div>
+            <label for="modal-otp-input" class="block text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-key mr-2 text-blue-600"></i>Enter OTP Code
+            </label>
+            <div class="relative">
+                <input id="modal-otp-input" 
+                       type="text" 
+                       maxlength="6"
+                       autocomplete="off"
+                       class="w-full px-4 py-4 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 text-center text-3xl font-mono tracking-widest"
+                       placeholder="000000">
+            </div>
+            <div class="flex items-center justify-between mt-3">
+                <div id="modal-otp-timer" class="text-sm text-gray-600">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span id="modal-timer-text">03:00</span>
+                </div>
+                <button type="button" 
+                        id="modal-resend-otp-btn"
+                        onclick="sendWithdrawalOtp(true)"
+                        class="hidden text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium">
+                    <i class="fas fa-redo mr-1"></i>Resend OTP
+                </button>
+            </div>
+            <div id="modal-otp-verify-message" class="hidden mt-3"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex space-x-3 pt-4 border-t border-gray-200">
+            <button type="button" 
+                    id="modal-send-otp-btn"
+                    onclick="sendWithdrawalOtp()"
+                    class="hidden flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                <span id="modal-send-otp-text">Send OTP</span>
+                <span id="modal-send-otp-spinner" class="hidden"><i class="fas fa-spinner fa-spin"></i></span>
+            </button>
+            <button type="button" 
+                    onclick="closeOtpModal()"
+                    class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                Cancel
+            </button>
+        </div>
+
+        <!-- Info -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p class="text-xs text-yellow-800">
+                <i class="fas fa-info-circle mr-1"></i>
+                OTP code has been sent to your email. It will expire in 3 minutes.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    .animate-fade-in {
+        animation: fade-in 0.3s ease-out;
+    }
+</style>
 @endsection

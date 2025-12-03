@@ -49,6 +49,10 @@ Route::middleware(['auth'])->prefix('withdrawal')->name('withdrawal.')->group(fu
     Route::post('/request', [WithdrawalController::class, 'request'])->name('request');
     Route::post('/bind-wallet', [WithdrawalController::class, 'bindWallet'])->name('bind-wallet');
     Route::get('/history', [WithdrawalController::class, 'history'])->name('history');
+    
+    // Withdrawal OTP Routes
+    Route::post('/send-otp', [WithdrawalController::class, 'sendOtp'])->name('send-otp');
+    Route::post('/verify-otp', [WithdrawalController::class, 'verifyOtp'])->name('verify-otp');
 });
 
 // Admin Routes

@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Mail\OtpVerificationMail;
 use App\Models\Withdrawal;
 use App\Traits\CreatesNotifications;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class WithdrawalController extends Controller
@@ -18,15 +23,106 @@ class WithdrawalController extends Controller
         // Middleware is applied in routes
     }
 
+    /**
+     * Send OTP to user's email for withdrawal verification.
+     */
+    public function sendOtp(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $email = strtolower($user->email);
+        
+        // Check if OTP was sent recently (prevent spam)
+        $lastOtpTime = Cache::get("withdrawal_otp_sent_{$email}");
+        if ($lastOtpTime && now()->diffInSeconds($lastOtpTime) < 60) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please wait before requesting a new OTP code.',
+                'retry_after' => 60 - now()->diffInSeconds($lastOtpTime)
+            ], 429);
+        }
+
+        // Generate 6-digit OTP
+        $otp = str_pad((string) rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+        
+        // Store OTP in cache for 3 minutes (180 seconds)
+        Cache::put("withdrawal_otp_{$email}", $otp, now()->addMinutes(3));
+        Cache::put("withdrawal_otp_sent_{$email}", now(), now()->addMinutes(1));
+
+        try {
+            // Send OTP email
+            Mail::to($email)->send(new OtpVerificationMail($otp, $user->name));
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'OTP has been sent to your email address.',
+                'expires_in' => 180 // 3 minutes in seconds
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send OTP. Please try again later.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify OTP for withdrawal.
+     */
+    public function verifyOtp(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $email = strtolower($user->email);
+        
+        $request->validate([
+            'otp' => ['required', 'string', 'size:6'],
+        ]);
+
+        $cachedOtp = Cache::get("withdrawal_otp_{$email}");
+
+        if (!$cachedOtp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP has expired. Please request a new one.'
+            ], 400);
+        }
+
+        if ($cachedOtp !== $request->otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid OTP code. Please try again.'
+            ], 400);
+        }
+
+        // Mark OTP as verified (valid for 10 minutes)
+        Cache::put("withdrawal_otp_verified_{$email}", true, now()->addMinutes(10));
+        
+        // Remove the OTP from cache
+        Cache::forget("withdrawal_otp_{$email}");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully!'
+        ]);
+    }
+
     public function request(Request $request)
     {
         $user = Auth::user();
+        $email = strtolower($user->email);
 
         $minWithdrawal = config('platform.min_withdrawal', 10);
 
         $request->validate([
             'amount' => ['required', 'numeric', 'min:' . $minWithdrawal],
+            'otp_verified' => ['required', 'accepted'],
         ]);
+
+        // Verify OTP was verified
+        if (!Cache::get("withdrawal_otp_verified_{$email}")) {
+            throw ValidationException::withMessages([
+                'amount' => ['Email verification is required. Please verify your email with OTP before requesting withdrawal.'],
+            ]);
+        }
 
         if (!$user->has_deposited || !$user->investment_package) {
             return redirect()->route('withdrawal')->with('error', 'You must complete a package deposit before withdrawing.');
@@ -98,6 +194,9 @@ class WithdrawalController extends Controller
             // Notify all admins about the new withdrawal request
             self::notifyAdminsOfWithdrawalRequest($user, $request->amount);
         });
+
+        // Clear OTP verification cache
+        Cache::forget("withdrawal_otp_verified_{$email}");
 
         return redirect()->route('dashboard')->with('success', 'Withdrawal request submitted successfully. It will be processed within 48 hours.');
     }

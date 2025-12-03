@@ -19,12 +19,28 @@ class PaymentController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->has_deposited) {
-            return redirect()->route('dashboard')->with('error', 'You have already made your initial deposit.');
-        }
-
         $packages = config('investment.packages', []);
         $packageCodes = array_keys($packages);
+        
+        // For redeposit, only allow higher packages
+        if ($user->has_deposited && $user->investment_package) {
+            $currentPackageCode = $user->investment_package;
+            $packageOrder = ['starter_35', 'growth_50', 'pro_100'];
+            $currentIndex = array_search($currentPackageCode, $packageOrder);
+            
+            if ($currentIndex !== false) {
+                // Only allow next 2 packages
+                $allowedUpgrades = array_slice($packageOrder, $currentIndex + 1, 2);
+                $packageCodes = array_intersect($packageCodes, $allowedUpgrades);
+                
+                if (empty($packageCodes)) {
+                    return redirect()->route('deposit')->with('error', 'No upgrade packages available. You already have the highest package.');
+                }
+            }
+        } elseif ($user->has_deposited) {
+            // User has deposited but no package set (shouldn't happen, but handle it)
+            return redirect()->route('dashboard')->with('error', 'Please contact support to resolve your account status.');
+        }
 
         $validated = $request->validate([
             'package_code' => ['required', Rule::in($packageCodes)],
@@ -34,6 +50,17 @@ class PaymentController extends Controller
         ]);
 
         $selectedPackage = $packages[$validated['package_code']];
+        
+        // Calculate deposit amount (difference for redeposit, full amount for new deposit)
+        $isRedeposit = $user->has_deposited && $user->investment_package;
+        $depositAmount = $selectedPackage['deposit_amount'];
+        
+        if ($isRedeposit) {
+            $currentPackage = $packages[$user->investment_package] ?? null;
+            if ($currentPackage) {
+                $depositAmount = $selectedPackage['deposit_amount'] - $currentPackage['deposit_amount'];
+            }
+        }
 
         $requestedWallet = $validated['wallet_address'] ?? null;
         $walletAddress = null;
@@ -59,10 +86,10 @@ class PaymentController extends Controller
             $receiptPath = $request->file('transaction_receipt')->store('deposit-receipts', 'public');
         }
 
-        DB::transaction(function () use ($user, $validated, $selectedPackage, $walletAddress, $receiptPath) {
+        DB::transaction(function () use ($user, $validated, $selectedPackage, $walletAddress, $receiptPath, $depositAmount, $isRedeposit) {
             Deposit::create([
                 'user_id' => $user->id,
-                'amount' => $selectedPackage['deposit_amount'],
+                'amount' => $depositAmount,
                 'expected_withdrawal_cap' => $selectedPackage['withdrawal_cap'],
                 'currency' => 'USD',
                 'package_code' => $validated['package_code'],
@@ -70,13 +97,13 @@ class PaymentController extends Controller
                 'payment_id' => $validated['transaction_reference'],
                 'payment_details' => $walletAddress,
                 'status' => 'pending',
-                'notes' => null,
+                'notes' => $isRedeposit ? 'Package upgrade deposit' : null,
                 'receipt_path' => $receiptPath,
             ]);
 
             $userUpdate = [
                 'payment_method' => 'bep20',
-                'pending_deposit_amount' => $selectedPackage['deposit_amount'],
+                'pending_deposit_amount' => $depositAmount,
                 'pending_package_code' => $validated['package_code'],
             ];
 
@@ -90,10 +117,15 @@ class PaymentController extends Controller
             
             // Notify all admins about the new deposit request
             $packageName = $selectedPackage['name'] ?? 'Package';
-            \App\Traits\CreatesNotifications::notifyAdminsOfDepositRequest($user, $selectedPackage['deposit_amount'], $packageName);
+            $notificationAmount = $isRedeposit ? $depositAmount : $selectedPackage['deposit_amount'];
+            \App\Traits\CreatesNotifications::notifyAdminsOfDepositRequest($user, $notificationAmount, $packageName);
         });
 
-        return redirect()->route('dashboard')->with('success', 'Deposit request submitted successfully. Your account will be activated after payment verification.');
+        $successMessage = $isRedeposit 
+            ? 'Upgrade deposit request submitted successfully. Your package will be upgraded after payment verification.'
+            : 'Deposit request submitted successfully. Your account will be activated after payment verification.';
+
+        return redirect()->route('dashboard')->with('success', $successMessage);
     }
 
     public function stripeWebhook(Request $request)

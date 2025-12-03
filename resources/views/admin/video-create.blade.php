@@ -45,20 +45,20 @@
                 <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-white shadow-sm text-gray-600">Required</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                    <input name="title" value="{{ old('title') }}" required class="w-full px-4 py-2 border {{ $errors->has('title') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    @error('title')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <input name="category" value="{{ old('category') }}" required class="w-full px-4 py-2 border {{ $errors->has('category') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Heroism / Mysteries ...">
-                    @error('category')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input name="title" value="{{ old('title') }}" required class="w-full px-4 py-2 border {{ $errors->has('title') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                @error('title')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <input name="category" value="{{ old('category') }}" required class="w-full px-4 py-2 border {{ $errors->has('category') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Heroism / Mysteries ...">
+                @error('category')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Duration (seconds)</label>
                     <input name="duration" type="number" min="1" value="{{ old('duration') }}" required class="w-full px-4 py-2 border {{ $errors->has('duration') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
@@ -101,17 +101,17 @@
                 <div class="md:col-span-2 lg:col-span-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Video URL <span class="text-red-500">*</span></label>
                     <input name="youtube_url" type="url" value="{{ old('youtube_url') }}" required class="w-full px-4 py-2 border {{ $errors->has('youtube_url') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://www.youtube.com/watch?v=... • https://www.youtube.com/shorts/... • https://www.tiktok.com/@user/video/...">
-                    @error('youtube_url')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                @error('youtube_url')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
                     <p class="mt-1 text-xs text-gray-500">Supports YouTube videos/shorts and TikTok links. The ID is auto-extracted.</p>
-                </div>
-                <div>
+            </div>
+            <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Video ID (optional)</label>
-                    <input name="youtube_id" value="{{ old('youtube_id') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Auto-extracted from URL">
-                    @error('youtube_id')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                <input name="youtube_id" value="{{ old('youtube_id') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Auto-extracted from URL">
+                @error('youtube_id')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
                     <p class="mt-1 text-xs text-gray-500">Override if you want to control the ID manually.</p>
                 </div>
                 <div class="bg-gray-50 border border-dashed border-gray-200 rounded-lg p-4 text-sm text-gray-600">
@@ -121,15 +121,15 @@
                         <li>YouTube Shorts: <span class="font-mono text-gray-700">https://youtube.com/shorts/&lt;id&gt;</span></li>
                         <li>TikTok: <span class="font-mono text-gray-700">https://www.tiktok.com/@user/video/&lt;id&gt;</span></li>
                     </ul>
-                </div>
-                <div>
+            </div>
+            <div>
                     <label class="block text-sm	font-medium text-gray-700 mb-1">Thumbnail URL</label>
-                    <input name="thumbnail_url" type="url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://...">
-                    <p class="text-xs text-gray-500 mt-1">Optional if you upload an image below.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Upload Thumbnail</label>
-                    <input name="thumbnail" type="file" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                <input name="thumbnail_url" type="url" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://...">
+                <p class="text-xs text-gray-500 mt-1">Optional if you upload an image below.</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Upload Thumbnail</label>
+                <input name="thumbnail" type="file" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
                     <p class="text-xs text-gray-500 mt-1">JPG, PNG, or WEBP up to 2&nbsp;MB.</p>
                 </div>
             </div>
@@ -137,7 +137,7 @@
 
         <div class="rounded-2xl border border-gray-100 p-5 bg-gradient-to-br from-slate-50 to-white">
             <div class="flex items-center justify-between mb-4">
-                <div>
+            <div>
                     <p class="text-xs uppercase tracking-wide text-emerald-600 font-semibold">Step 3</p>
                     <h3 class="text-lg font-semibold text-gray-900">Earning Settings</h3>
                     <p class="text-sm text-gray-500">Customize payouts per package. Defaults apply if fields are left empty.</p>
@@ -149,37 +149,37 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="md:col-span-2 lg:col-span-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Default Dollar Value</label>
-                    <input name="dollar_value" type="number" step="0.01" min="0.01" value="{{ old('dollar_value') }}" required class="w-full px-4 py-2 border {{ $errors->has('dollar_value') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    @error('dollar_value')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                <input name="dollar_value" type="number" step="0.01" min="0.01" value="{{ old('dollar_value') }}" required class="w-full px-4 py-2 border {{ $errors->has('dollar_value') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                @error('dollar_value')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
                     <p class="mt-1 text-xs text-gray-500">Used if a package-specific value is not provided.</p>
                 </div>
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Starter Package ($35)</label>
                     <input name="dollar_value_starter" type="number" step="0.01" min="0.01" value="{{ old('dollar_value_starter') }}" class="w-full px-4 py-2 border {{ $errors->has('dollar_value_starter') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Optional">
                     @error('dollar_value_starter')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Growth Package ($50)</label>
                     <input name="dollar_value_growth" type="number" step="0.01" min="0.01" value="{{ old('dollar_value_growth') }}" class="w-full px-4 py-2 border {{ $errors->has('dollar_value_growth') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Optional">
                     @error('dollar_value_growth')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                </div>
+            </div>
                 <div class="space-y-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Pro Package ($100)</label>
                     <input name="dollar_value_pro" type="number" step="0.01" min="0.01" value="{{ old('dollar_value_pro') }}" class="w-full px-4 py-2 border {{ $errors->has('dollar_value_pro') ? 'border-red-500' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Optional">
                     @error('dollar_value_pro')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                </div>
+            </div>
                 <div class="md:col-span-2 lg:col-span-3 bg-white border border-emerald-100 rounded-xl p-4 text-sm text-gray-600">
                     <p class="font-semibold text-gray-800 mb-1">Need inspiration?</p>
                     <p class="text-xs text-gray-500">Most admins start with a 1.0x / 1.2x / 1.5x split across Starter, Growth, and Pro packages.</p>
-                </div>
+            </div>
             </div>
         </div>
 

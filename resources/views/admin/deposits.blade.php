@@ -101,7 +101,23 @@
                                 {{ data_get($packageCatalog, $deposit->package_code.'.name', '—') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                                {{ $deposit->payment_details }}
+                                @php
+                                    // Try to get wallet address from deposit payment_details, user's bep20_address, or user's payment_details
+                                    $walletAddress = $deposit->payment_details 
+                                        ?? $deposit->user->bep20_address 
+                                        ?? $deposit->user->payment_details
+                                        ?? null;
+                                @endphp
+                                @if($walletAddress)
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-mono" title="{{ $walletAddress }}">{{ Str::limit($walletAddress, 12, '...') }}</span>
+                                        <button type="button" class="text-blue-600 hover:text-blue-700 transition-colors" onclick="copyToClipboard('{{ $walletAddress }}', this)" title="Copy address">
+                                            <i class="fas fa-copy text-xs"></i>
+                                        </button>
+                                    </div>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ strtoupper($deposit->payment_method) }}</span>
@@ -264,6 +280,37 @@
 
 @section('scripts')
 <script>
+    function copyToClipboard(text, button) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                const icon = button.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'fas fa-check text-xs text-green-600';
+                setTimeout(() => {
+                    icon.className = originalClass;
+                }, 2000);
+            }).catch(() => {
+                alert('Failed to copy');
+            });
+        } else {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            const icon = button.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-check text-xs text-green-600';
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 2000);
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const triggers = document.querySelectorAll('[data-fail-trigger]');
         if (!triggers.length) {

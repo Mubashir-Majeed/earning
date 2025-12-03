@@ -70,12 +70,51 @@ class DashboardController extends Controller
         $user = auth()->user();
         
         $latestDeposit = $user->deposits()->latest()->with('user')->first();
-        $packages = config('investment.packages', []);
+        $allPackages = config('investment.packages', []);
+        
+        // Filter packages for redeposit scenario
+        $packages = $allPackages;
+        $isRedeposit = false;
+        $currentPackageAmount = 0;
+        
+        if ($user->has_deposited && $user->investment_package) {
+            $isRedeposit = true;
+            $currentPackageCode = $user->investment_package;
+            $currentPackage = $allPackages[$currentPackageCode] ?? null;
+            
+            if ($currentPackage) {
+                $currentPackageAmount = $currentPackage['deposit_amount'];
+                
+                // Define package order for upgrade path
+                $packageOrder = ['starter_35', 'growth_50', 'pro_100'];
+                $currentIndex = array_search($currentPackageCode, $packageOrder);
+                
+                // Filter to show only next 2 packages (or available higher packages)
+                $packages = [];
+                if ($currentIndex !== false) {
+                    $availableUpgrades = array_slice($packageOrder, $currentIndex + 1, 2);
+                    
+                    foreach ($availableUpgrades as $upgradeCode) {
+                        if (isset($allPackages[$upgradeCode])) {
+                            $upgradePackage = $allPackages[$upgradeCode];
+                            $amountToAdd = $upgradePackage['deposit_amount'] - $currentPackageAmount;
+                            $packages[$upgradeCode] = array_merge($upgradePackage, [
+                                'amount_to_add' => $amountToAdd,
+                                'current_package_amount' => $currentPackageAmount,
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+        
         $viewData = [
             'user' => $user,
             'packages' => $packages,
             'platformWallet' => config('platform.wallet_address'),
             'latestDeposit' => $latestDeposit,
+            'isRedeposit' => $isRedeposit,
+            'currentPackageAmount' => $currentPackageAmount,
         ];
 
         if ($latestDeposit) {

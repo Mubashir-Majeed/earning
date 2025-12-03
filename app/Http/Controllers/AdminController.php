@@ -513,13 +513,32 @@ class AdminController extends Controller
             }
 
             $packageCode = $this->resolvePackageCode($deposit->package_code, $deposit->amount);
+            
+            // Check if this is a redeposit/upgrade
+            $isUpgrade = $deposit->user->has_deposited && $deposit->user->investment_package;
+            $packages = config('investment.packages', []);
+            $newPackage = $packages[$packageCode] ?? null;
+            
+            // For upgrades, use the new package's total amount for unwithdrawable_balance_min
+            // For new deposits, use the deposit amount
+            $unwithdrawableAmount = $deposit->amount;
+            if ($isUpgrade && $newPackage) {
+                $unwithdrawableAmount = $newPackage['deposit_amount'];
+            }
+            
+            // For upgrades, keep the original initial_deposit_amount
+            // For new deposits, set it to the deposit amount
+            $initialDepositAmount = $deposit->amount;
+            if ($isUpgrade && $deposit->user->initial_deposit_amount) {
+                $initialDepositAmount = $deposit->user->initial_deposit_amount;
+            }
 
             $deposit->user->update([
-                'initial_deposit_amount' => $deposit->amount,
+                'initial_deposit_amount' => $initialDepositAmount,
                 'investment_package' => $packageCode,
                 'pending_deposit_amount' => null,
                 'pending_package_code' => null,
-                'unwithdrawable_balance_min' => $deposit->amount,
+                'unwithdrawable_balance_min' => $unwithdrawableAmount,
                 'bep20_address' => $deposit->user->bep20_address ?? $deposit->payment_details,
                 'wallet_bound_at' => $deposit->user->wallet_bound_at ?? now(),
             ]);

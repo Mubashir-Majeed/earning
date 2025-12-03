@@ -17,6 +17,7 @@ class Deposit extends Model
         'expected_withdrawal_cap',
         'payment_method',
         'payment_id',
+        'payment_details',
         'status',
         'notes',
         'receipt_path',

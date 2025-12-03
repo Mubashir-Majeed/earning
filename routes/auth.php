@@ -16,6 +16,13 @@ Route::middleware('guest')->group(function () {
         ->name('register');
 
     Route::post('register', [RegisteredUserController::class, 'store']);
+    
+    // OTP Routes
+    Route::post('register/send-otp', [RegisteredUserController::class, 'sendOtp'])
+        ->name('register.send-otp');
+    
+    Route::post('register/verify-otp', [RegisteredUserController::class, 'verifyOtp'])
+        ->name('register.verify-otp');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
@@ -53,6 +60,13 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+    
+    // Password Change OTP Routes
+    Route::post('password/send-otp', [PasswordController::class, 'sendOtp'])
+        ->name('password.send-otp');
+    
+    Route::post('password/verify-otp', [PasswordController::class, 'verifyOtp'])
+        ->name('password.verify-otp');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
