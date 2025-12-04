@@ -133,8 +133,17 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'referrer_id' => ['nullable', 'string', 'exists:users,referral_code'],
+            'referrer_id' => [
+                'required', 
+                'string', 
+                'size:6',
+                'exists:users,referral_code'
+            ],
             'otp_verified' => ['required', 'accepted'],
+        ], [
+            'referrer_id.required' => 'Referral code is required to create an account.',
+            'referrer_id.size' => 'Referral code must be exactly 6 characters.',
+            'referrer_id.exists' => 'Invalid referral code. Please enter a valid referral code from an existing user.',
         ]);
 
         $email = strtolower($request->email);
@@ -146,11 +155,14 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        $referrer = null;
-        $referralCode = $request->referrer_id ?: $request->ref;
+        // Get referrer - referral code is required and must exist
+        $referralCode = strtoupper($request->referrer_id ?: $request->ref);
+        $referrer = User::where('referral_code', $referralCode)->first();
         
-        if ($referralCode) {
-            $referrer = User::where('referral_code', $referralCode)->first();
+        if (!$referrer) {
+            throw ValidationException::withMessages([
+                'referrer_id' => ['Invalid referral code. Please enter a valid 6-character referral code.'],
+            ]);
         }
 
         $user = User::create([

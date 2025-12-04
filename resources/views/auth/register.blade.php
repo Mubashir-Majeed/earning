@@ -143,22 +143,27 @@
         <!-- Referral Code -->
         <div class="space-y-2">
             <label for="referrer_id" class="block text-sm font-medium text-gray-300">
-                <i class="fas fa-gift mr-2 text-yellow-400"></i>Referral Code <span class="text-gray-400 text-xs">(Optional)</span>
+                <i class="fas fa-gift mr-2 text-yellow-400"></i>Referral Code <span class="text-red-400">*</span>
             </label>
             <div class="relative">
                 <input id="referrer_id" 
                        type="text" 
                        name="referrer_id" 
                        value="{{ request('ref') ?: old('referrer_id') }}" 
+                       required
                        autocomplete="off"
                        maxlength="6"
+                       minlength="6"
                        style="text-transform: uppercase;"
                        class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all duration-300"
-                       placeholder="Enter 6-character code (e.g., ABC123)">
+                       placeholder="Enter referral code (e.g., A12P5)">
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <i class="fas fa-user-plus text-gray-400"></i>
                 </div>
             </div>
+            <p class="text-xs text-gray-400 mt-1">
+                <i class="fas fa-info-circle mr-1"></i>A valid referral code is required to create an account.
+            </p>
             @if(request('ref'))
                 <p class="text-green-400 text-sm mt-1">
                     <i class="fas fa-check-circle mr-1"></i>Referral code automatically applied!
@@ -458,11 +463,40 @@
             const otpInput = document.getElementById('otp');
             const emailInput = document.getElementById('email');
 
-            // Auto-uppercase referral code input
+            // Auto-uppercase referral code input and validate
             if (referralInput) {
                 referralInput.addEventListener('input', function() {
-                    this.value = this.value.toUpperCase();
+                    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    
+                    // Validate referral code length
+                    if (this.value.length === 6) {
+                        // Optionally validate referral code exists via AJAX
+                        validateReferralCode(this.value);
+                    }
                 });
+                
+                referralInput.addEventListener('blur', function() {
+                    if (this.value.length === 6) {
+                        validateReferralCode(this.value);
+                    }
+                });
+            }
+            
+            // Validate referral code function
+            async function validateReferralCode(code) {
+                if (!code || code.length !== 6) return;
+                
+                try {
+                    const response = await fetch('{{ route("register") }}', {
+                        method: 'HEAD',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                } catch (error) {
+                    // Silent fail - validation will happen on server side
+                }
             }
 
             // OTP input - auto verify on 6 digits
@@ -511,6 +545,15 @@
                     if (document.getElementById('otp-section').classList.contains('hidden')) {
                         showMessage('otp-message', 'Please send OTP to your email first.', 'error');
                     }
+                    return false;
+                }
+                
+                // Validate referral code
+                const referralCode = referralInput.value.trim().toUpperCase();
+                if (!referralCode || referralCode.length !== 6) {
+                    e.preventDefault();
+                    showMessage('otp-verify-message', 'Please enter a valid 6-character referral code.', 'error');
+                    referralInput.focus();
                     return false;
                 }
 
