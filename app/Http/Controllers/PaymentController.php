@@ -84,7 +84,25 @@ class PaymentController extends Controller
 
         $receiptPath = null;
         if ($request->hasFile('transaction_receipt')) {
-            $receiptPath = $request->file('transaction_receipt')->store('deposit-receipts', 'public');
+            // Create directory if it doesn't exist
+            $uploadDir = public_path('images/deposit-receipts');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $file = $request->file('transaction_receipt');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Store in storage first for backup
+            $storagePath = $file->storeAs('deposit-receipts', $filename, 'public');
+            
+            // Copy to public folder
+            $publicPath = $uploadDir . '/' . $filename;
+            copy(storage_path('app/public/' . $storagePath), $publicPath);
+            
+            // Save public path in database
+            $receiptPath = 'images/deposit-receipts/' . $filename;
         }
 
         DB::transaction(function () use ($user, $validated, $selectedPackage, $walletAddress, $receiptPath, $depositAmount, $isRedeposit) {
@@ -121,23 +139,20 @@ class PaymentController extends Controller
             $notificationAmount = $isRedeposit ? $depositAmount : $selectedPackage['deposit_amount'];
             \App\Traits\CreatesNotifications::notifyAdminsOfDepositRequest($user, $notificationAmount, $packageName);
             
-            // Send email to all admins
-            $admins = \App\Models\User::role('admin')->get();
-            foreach ($admins as $admin) {
-                try {
-                    \Mail::to($admin->email)->send(
-                        new \App\Mail\AdminDepositNotificationMail(
-                            $user,
-                            $notificationAmount,
-                            $packageName,
-                            $validated['transaction_reference'],
-                            $walletAddress
-                        )
-                    );
-                } catch (\Exception $e) {
-                    // Log error but don't fail the deposit
-                    \Log::error('Failed to send deposit notification email to admin: ' . $e->getMessage());
-                }
+            // Send email to admin
+            try {
+                \Mail::to('earnquest82@gmail.com')->send(
+                    new \App\Mail\AdminDepositNotificationMail(
+                        $user,
+                        $notificationAmount,
+                        $packageName,
+                        $validated['transaction_reference'],
+                        $walletAddress
+                    )
+                );
+            } catch (\Exception $e) {
+                // Log error but don't fail the deposit
+                \Log::error('Failed to send deposit notification email to admin: ' . $e->getMessage());
             }
         });
 

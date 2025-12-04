@@ -79,7 +79,13 @@
 
                 @if($depositRecord->receipt_path)
                     @php
-                        $receiptUrl = asset('storage/' . ltrim($depositRecord->receipt_path, '/'));
+                        $path = ltrim($depositRecord->receipt_path, '/');
+                        // Handle both old storage paths and new public paths
+                        if (strpos($path, 'images/') === 0) {
+                            $receiptUrl = asset('public/' . $path);
+                        } else {
+                            $receiptUrl = asset('storage/' . $path);
+                        }
                     @endphp
                     <div class="border border-blue-100 rounded-xl p-4 bg-blue-50">
                         <h3 class="text-sm font-semibold text-blue-800 mb-2 flex items-center gap-2">

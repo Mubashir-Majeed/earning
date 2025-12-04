@@ -65,7 +65,13 @@
                             We received your upload. You can view the file below while it's under review.
                         </p>
                         @php
-                            $receiptUrl = asset('storage/' . ltrim($pendingDeposit->receipt_path, '/'));
+                            $path = ltrim($pendingDeposit->receipt_path, '/');
+                            // Handle both old storage paths and new public paths
+                            if (strpos($path, 'images/') === 0) {
+                                $receiptUrl = asset('public/' . $path);
+                            } else {
+                                $receiptUrl = asset('storage/' . $path);
+                            }
                         @endphp
                         <a href="{{ $receiptUrl }}"
                            target="_blank"

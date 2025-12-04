@@ -33,15 +33,36 @@ class ProfileController extends Controller
         if ($request->hasFile('profile_picture')) {
             // Delete old profile picture if exists
             if ($user->profile_picture) {
-                $oldPath = public_path('storage/' . $user->profile_picture);
-                if (file_exists($oldPath)) {
-                    @unlink($oldPath);
+                // Check both public and storage paths
+                $oldPathPublic = public_path('images/profile-pictures/' . basename($user->profile_picture));
+                $oldPathStorage = storage_path('app/public/' . $user->profile_picture);
+                if (file_exists($oldPathPublic)) {
+                    @unlink($oldPathPublic);
+                }
+                if (file_exists($oldPathStorage)) {
+                    @unlink($oldPathStorage);
                 }
             }
 
-            // Store new profile picture
-            $path = $request->file('profile_picture')->store('profile-pictures', 'public');
-            $validated['profile_picture'] = $path;
+            // Create directory if it doesn't exist
+            $uploadDir = public_path('images/profile-pictures');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $file = $request->file('profile_picture');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Store in storage first for backup
+            $storagePath = $file->storeAs('profile-pictures', $filename, 'public');
+            
+            // Copy to public folder
+            $publicPath = $uploadDir . '/' . $filename;
+            copy(storage_path('app/public/' . $storagePath), $publicPath);
+            
+            // Save public path in database
+            $validated['profile_picture'] = 'images/profile-pictures/' . $filename;
         } else {
             // Keep existing profile picture if not uploading new one
             unset($validated['profile_picture']);

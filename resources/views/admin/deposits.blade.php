@@ -130,9 +130,16 @@
                                         $reference = trim($reference);
                                     }
                                     $reference = $reference ?: null;
-                                    $receiptUrl = $deposit->receipt_path
-                                        ? asset('storage/' . ltrim($deposit->receipt_path, '/'))
-                                        : null;
+                                    $receiptUrl = null;
+                                    if ($deposit->receipt_path) {
+                                        $path = ltrim($deposit->receipt_path, '/');
+                                        // Handle both old storage paths and new public paths
+                                        if (strpos($path, 'images/') === 0) {
+                                            $receiptUrl = asset('public/' . $path);
+                                        } else {
+                                            $receiptUrl = asset('storage/' . $path);
+                                        }
+                                    }
                                 @endphp
                                 <div class="flex flex-col space-y-1">
                                     <span class="font-mono text-gray-800">{{ $reference ?? '—' }}</span>

@@ -328,8 +328,25 @@ class AdminController extends Controller
 
         // If a file thumbnail is uploaded, store it and override thumbnail_url
         if ($request->hasFile('thumbnail')) {
-            $path = $request->file('thumbnail')->store('thumbnails', 'public');
-            $validated['thumbnail_url'] = asset('storage/' . $path);
+            // Create directory if it doesn't exist
+            $uploadDir = public_path('images/thumbnails');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $file = $request->file('thumbnail');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Store in storage first for backup
+            $storagePath = $file->storeAs('thumbnails', $filename, 'public');
+            
+            // Copy to public folder
+            $publicPath = $uploadDir . '/' . $filename;
+            copy(storage_path('app/public/' . $storagePath), $publicPath);
+            
+            // Save public path in database
+            $validated['thumbnail_url'] = asset('public/images/thumbnails/' . $filename);
         }
 
         // Set default assigned_date to today if not provided
@@ -420,8 +437,25 @@ class AdminController extends Controller
 
         // If a file thumbnail is uploaded, store it and override thumbnail_url
         if ($request->hasFile('thumbnail')) {
-            $path = $request->file('thumbnail')->store('thumbnails', 'public');
-            $validated['thumbnail_url'] = asset('storage/' . $path);
+            // Create directory if it doesn't exist
+            $uploadDir = public_path('images/thumbnails');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Generate unique filename
+            $file = $request->file('thumbnail');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            
+            // Store in storage first for backup
+            $storagePath = $file->storeAs('thumbnails', $filename, 'public');
+            
+            // Copy to public folder
+            $publicPath = $uploadDir . '/' . $filename;
+            copy(storage_path('app/public/' . $storagePath), $publicPath);
+            
+            // Save public path in database
+            $validated['thumbnail_url'] = asset('public/images/thumbnails/' . $filename);
         }
 
         // Set default max_watches_per_day if not provided

@@ -194,23 +194,20 @@ class WithdrawalController extends Controller
             // Notify all admins about the new withdrawal request
             self::notifyAdminsOfWithdrawalRequest($user, $request->amount);
             
-            // Send email to all admins
-            $admins = \App\Models\User::role('admin')->get();
-            foreach ($admins as $admin) {
-                try {
-                    \Mail::to($admin->email)->send(
-                        new \App\Mail\AdminWithdrawalNotificationMail(
-                            $user,
-                            $request->amount,
-                            $netAmount,
-                            $feeAmount,
-                            $user->bep20_address
-                        )
-                    );
-                } catch (\Exception $e) {
-                    // Log error but don't fail the withdrawal
-                    \Log::error('Failed to send withdrawal notification email to admin: ' . $e->getMessage());
-                }
+            // Send email to admin
+            try {
+                \Mail::to('earnquest82@gmail.com')->send(
+                    new \App\Mail\AdminWithdrawalNotificationMail(
+                        $user,
+                        $request->amount,
+                        $netAmount,
+                        $feeAmount,
+                        $user->bep20_address
+                    )
+                );
+            } catch (\Exception $e) {
+                // Log error but don't fail the withdrawal
+                \Log::error('Failed to send withdrawal notification email to admin: ' . $e->getMessage());
             }
         });
 

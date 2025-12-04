@@ -7,7 +7,16 @@
         <div class="relative">
             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
                 @if($user->profile_picture)
-                    <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="Profile Picture" class="w-full h-full object-cover">
+                    @php
+                        // Handle both old storage paths and new public paths
+                        $imagePath = $user->profile_picture;
+                        if (strpos($imagePath, 'images/') === 0) {
+                            $imageUrl = asset('public/' . $imagePath);
+                        } else {
+                            $imageUrl = asset('storage/' . $imagePath);
+                        }
+                    @endphp
+                    <img src="{{ $imageUrl }}" alt="Profile Picture" class="w-full h-full object-cover">
                 @else
                     <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500">
                         <i class="fas fa-user text-white text-5xl"></i>
