@@ -203,8 +203,9 @@
                                type="text" 
                                maxlength="6"
                                autocomplete="off"
-                               class="w-full px-4 py-4 bg-white/10 border-2 border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-center text-3xl font-mono tracking-[0.5em] font-bold"
-                               placeholder="000000">
+                               class="w-full px-6 py-4 bg-white/10 border-2 border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all duration-300 text-center text-2xl sm:text-3xl font-mono font-bold"
+                               placeholder="000000"
+                               style="letter-spacing: 0.25em; font-size: 1.75rem;">
                         <div id="modal-otp-error" class="hidden mt-2 text-sm text-red-400 text-center"></div>
                     </div>
 
